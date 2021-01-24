@@ -32,17 +32,55 @@ function onDeviceReady() {
 
     console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
 
-    map = L.map('map').setView([48,13],12);
+    // Some map tile sources
+    var tfapikey = "01be52efbdc14d38beac233a870c8d4f";
+    var tfland = L.tileLayer('https://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=' + tfapikey, {attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'}),
+    tftrans = L.tileLayer('https://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png?apikey=' + tfapikey, {attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'}),
+    tfout = L.tileLayer('https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=' + tfapikey, {attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'}),
+    tfcycle = L.tileLayer('https://{s}.tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=' + tfapikey, {attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'}),
+    opentopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {attribution: 'Kartendaten: &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende, <a href="http://viewfinderpanoramas.org">SRTM</a> | Kartendarstellung: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'}),
+    sat  = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'}),
+    Stamen_TonerHybrid = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-hybrid/{z}/{x}/{y}{r}.{ext}', {
+	    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+	    subdomains: 'abcd',
+	    minZoom: 0,
+	    maxZoom: 18,
+	    ext: 'png'
+    }),
+    osm = L.tileLayer('https://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
+	maxZoom: 20,
+	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    });
+    var hybrid = new L.layerGroup([sat, Stamen_TonerHybrid]);
 
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+    map = L.map('map', { layers: [osm] } ).setView([48,13],12);
+
+    var baseMaps = {
+	"Openstreetmap": osm,
+	"Landscape": tfland,
+	"Transport": tftrans,
+	"Outdoors": tfout,
+	"OpenCycleMap": tfcycle,
+	"OpenTopoMap" : opentopo,
+	"Sat": sat,
+	"Hybdir": hybrid,
+    };
+
+    var baseMapControl = new L.control.layers(baseMaps, {}, { collapsed: true, position: 'topright' } ).addTo(map);
+    baseMaps["Openstreetmap"].addTo(map);
+    //map.addEventListener('baselayerchange', function(){ map.fire('click'); });
+
+    L.control.scale({metric: true, imperial: false, position: "bottomright"}).addTo(map);
+
+
+    //L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    //    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    //}).addTo(map);
 
     map.locate({setView: true, maxZoom: 16});
 
     RdzWx.start("testarg", callBack);
     ready = 1;
-    //alert("zwei");
 }
 
 function callBack(arg) {
