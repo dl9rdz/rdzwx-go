@@ -23,9 +23,30 @@ document.addEventListener('deviceready', onDeviceReady, false);
 
 // map from sondeid to marker (and path)
 var markers = {};
-var mypos;
 var ready = 0;
 var map = null;
+var lastObj = { obj: null, pred: null, land: null };
+//var mypos = {lat: 48.56, lon: 13.43};
+var mypos = {lat: 48.1, lon: 13.1};
+
+var ballonIcon, landIcon;
+var infobox = null;
+
+var checkMark = "&#9989;";
+var crossMark = "&#x274C;";
+
+// add "bottom center" to leaflet
+(function (L) {
+   L.Map.prototype._initControlPos = function(_initControlPos) {
+      return function() {
+           _initControlPos.apply(this, arguments);  // original function
+           this._controlCorners['bottomcenter'] = L.DomUtil.create('div', 'leaflet-bottom leaflet-center',
+               L.DomUtil.create('div', 'leaflet-control-bottomcenter', this._controlContainer)
+           );
+      };
+   } (L.Map.prototype._initControlPos);
+}(L, this, document));
+
 
 function onDeviceReady() {
     // Cordova is now initialized. Have fun!
@@ -68,19 +89,164 @@ function onDeviceReady() {
 
     var baseMapControl = new L.control.layers(baseMaps, {}, { collapsed: true, position: 'topright' } ).addTo(map);
     baseMaps["Openstreetmap"].addTo(map);
-    //map.addEventListener('baselayerchange', function(){ map.fire('click'); });
+    // not working.......... map.addEventListener('baselayerchange', baseMapControl.collapse() );
 
     L.control.scale({metric: true, imperial: false, position: "bottomright"}).addTo(map);
 
-
-    //L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    //    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    //}).addTo(map);
+    // prediction
+    L.easyButton('<span class="target">&target;</span>', function(btn, map) {
+        getPrediction();
+    }).addTo(map);
 
     map.locate({setView: true, maxZoom: 16});
 
-    RdzWx.start("testarg", callBack);
+    var Infobox = L.Control.extend({
+      options: { position: 'bottomcenter' },
+   
+      onAdd: function(map) {
+	var infoContainer = L.DomUtil.create('div', 'leaflet-control-layers leaflet-control');
+	var infoBody = L.DomUtil.create('div', 'leaflet-popup-content-wrapper');
+	infoContainer.appendChild(infoBody);
+	infoBody.setAttribute('style', 'max-width: 100vw');
+	var infoContent = L.DomUtil.create('div', 'leaflet-popup-content');
+	infoBody.appendChild(infoContent);
+	var infoCloseButton = L.DomUtil.create('a', 'leaflet-popup-close-button');
+	infoContainer.appendChild(infoCloseButton);
+	infoCloseButton.innerHTML = 'x';
+	infoCloseButton.setAttribute('style', 'cursor: pointer');
+	this._infoContainer = infoContainer;
+	this._infoBody = infoBody;
+	this._infoContentContainer = infoContent;
+	this._infoCloseButton = infoCloseButton;
+
+	infoContent.innerHTML = 'This is the inner content';
+	this._hideContent();
+
+	L.DomEvent.disableClickPropagation(infoContainer);
+	L.DomEvent.on(infoCloseButton, 'click', L.DomEvent.stop);
+	L.DomEvent.on(infoCloseButton, 'click', this._hideContent, this);
+
+	return infoContainer;
+      },
+      toggle: function() {
+	if(this._contentShown == false) { this._showContent(); } else { this._hideContent(); }
+      },
+      setContent: function(content) {
+	this._infoContent = content;
+	if(this._infoContentContainer) { this._infoContentContainer.innerHTML = content; }
+      },
+      _hideContent: function(ev) {
+	this._infoBody.style.display = 'none';
+	this._infoCloseButton.style.display = 'none';
+	this._contentShown = false;
+      },
+      _showContent: function(ev) {
+	this._infoBody.style.display = '';
+	this._infoCloseButton.style.display = '';
+	this._contentShown = true;
+      },
+    });
+    infobox = new Infobox();
+    infobox.addTo(map);
+    
+    // button to show/hide info box on bottom 
+    L.easyButton('<span class="infobutton">I</span>', function(btn, map) {
+        infobox.toggle();
+    }).addTo(map);
+
+    // fit map to enclosing rectangle of (last pos, own pos)
+    L.easyButton('<span class="fitbutton">&#9635;</span>', function(btn, map) {
+        // last item
+	if(lastObj.obj == null) return;
+        // self position
+	if(mypos == null) return;
+	var items = [ [lastObj.obj.lat, lastObj.obj.lon], [mypos.lat, mypos.lon] ];
+	if(lastObj.land) { items.push( lastObj.land.getLatLng() ); }
+	b = L.latLngBounds(items);
+	map.fitBounds(b);
+    }).addTo(map);
+
+    ttgoStatus = L.easyButton( {
+      ttgourl: "http://192.168.42.1",
+      states: [{ stateName: 'offline',
+                 icon:      '<span class="ttgostatus">' + crossMark + '</span>',
+		 onClick: function(btn, map) { btn.state('online'); }
+               },
+	       { stateName: 'online',
+                 icon:      '<span class="ttgostatus">' + checkMark + '</span>',
+		 onClick: function(btn, map) { cordova.InAppBrowser.open(btn.ttgourl, '_blank', "location=yes"); }
+	       }
+	      ],
+      position: "topright"
+   });
+   ttgoStatus.state('offline');
+   ttgoStatus.addTo(map);
+
+	// '<span class="ttgosttus">&#9989;</span>', )
+
+    ballonIcon = L.icon({
+	  iconUrl: "img/ballon.png",
+          iconSize: [17,22],
+          iconAnchor: [9,22],
+          popupAnchor: [0,-28]
+    });
+    landingIcon = L.icon({
+	  iconUrl: "img/landing.png",
+          iconSize: [24,24],
+          iconAnchor: [12,12],
+          popupAnchor: [0,0]
+    });
     ready = 1;
+    RdzWx.start("testarg", callBack);
+
+    // just for testing
+    update( {id: "A1234567", lat: 48, lon: 13, alt: 10000, vs: 10, hs: 30} );
+}
+
+function formatParams(params) {
+    return '?' + Object.keys(params).map( function(key) {
+       return key+"="+encodeURIComponent(params[key])
+    }).join('&');
+}
+
+function getPrediction() {
+    TAWHIRI = 'http://predict.cusf.co.uk/api/v1';
+    if(lastObj.obj == null) {
+        alert("no object available");
+        return;
+    }
+    var tParams = {
+        "launch_latitude": lastObj.obj.lat,
+        "launch_longitude": lastObj.obj.lon,
+        "launch_altitude": lastObj.obj.alt,
+        "launch_datetime": new Date().toISOString().split('.')[0] + 'Z',
+        "ascent_rate": 5,
+        "descent_rate": 3,
+        "burst_altitude": lastObj.obj.alt+2,
+        "profile": "standard_profile",
+    }
+    const xhr = new XMLHttpRequest();
+    const url = TAWHIRI + formatParams(tParams);
+    xhr.onreadystatechange = function() {
+        if(xhr.readyState === 4) { 
+	    console.log(xhr.response);
+	    var pred = JSON.parse(xhr.response);
+            var traj = pred.prediction[1];  // 0 is ascent, 1 is descent...
+	    traj = traj.trajectory;
+	    var latlons = [];
+	    traj.forEach( p => latlons.push( [p.latitude, p.longitude] ) );
+	    //alert("path: "+JSON.stringify(traj));
+      	    poly = L.polyline(latlons, { opacity: 0.5, color: '#EE0000', dashArray: '8, 6'} );
+            poly.addTo(map);
+	    if( lastObj.pred  ) { lastObj.pred.remove(map); }
+            lastObj.pred = poly;
+	    if( lastObj.land ) { lastObj.land.remove(map); }
+	    lastObj.land = new L.marker(latlons.slice(-1)[0], {icon: landingIcon});
+	    lastObj.land.addTo(map);
+        }
+    }
+    xhr.open('GET', url, true);
+    xhr.send(null);
 }
 
 function callBack(arg) {
@@ -92,7 +258,7 @@ function callBack(arg) {
 	return;
     }
     console.log("callback: "+JSON.stringify(arg));
-    if(obj.id) {
+    if(obj.id || obj.msgtype) {
        update(obj);
     }
 }
@@ -103,32 +269,41 @@ function update(obj) {
  	console.log("not ready");
 	return;
     }
+    if(obj.msgtype) {
+	if(obj.msgtype == "ttgostatus") {
+	    ttgoStatus.ttgourl = 'http://' + obj.ip;
+	    ttgoStatus.state(obj.state)
+        }
+	// TODO: add GPS messages
+	return;
+    }
 
+    lastObj.obj = obj;
     var pos = new L.LatLng(obj.lat, obj.lon);
     var marker;
+    var tooltip;
     if(markers[obj.id]) {
       marker = markers[obj.id];
       if(pos.equals(marker.getLatLng())) { console.log("update: position unchanged"); }
       else { marker.path.addLatLng(pos); console.log("update: appending new position"); }
+      tooltip = marker.tt;
     } else {
       console.log("creating new marker");
-      var myIcon = L.icon({
-          //iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-	  iconUrl: "img/ballon.png",
-          iconSize: [17,22],
-          iconAnchor: [9,22],
-          popupAnchor: [0,-28],
-      });
-      marker = new L.marker(pos, {icon: myIcon});
+      marker = new L.marker(pos, {icon: ballonIcon});
       poly = L.polyline(pos, { opacity: 0.5, color: '#3388ff'} );
       marker.path = poly;
       //marker.on('clock', function() { showMarkerInfoWindow( obj.id, pos) } );
       markers[obj.id] = marker;
       marker.addTo(map);
       poly.addTo(map);
+      tooltip = L.tooltip({ direction: 'right', permanent: true, className: 'sondeTooltip', offset: [10,0], interactive: false, opacity: 0.6 });
+      marker.bindTooltip(tooltip);
+      marker.tt = tooltip;
    }
-   //var icon = new Icon();
-   //marker.set
+   var tt = '<div class="tooltip-container">' + obj.id + '<div class="text-speed tooltip-container">' + obj.alt + 'm '+ obj.vs +'m/s ' + (obj.hs*3.6).toFixed(1) + 'km/h </div></div>';
+   tooltip.setContent(tt);
+
    marker.setLatLng(pos);
    marker.update();  // necessary?
 }
+

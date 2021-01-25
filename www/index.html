@@ -36,13 +36,22 @@
         <meta name="color-scheme" content="light dark">
         <link rel="stylesheet" href="css/index.css">
 	<link rel="stylesheet" href="css/leaflet.css">
+        <script src="cordova.js"></script>
 	<script src="js/leaflet.js"></script>
+	<link rel="stylesheet" href="css/easy-button.css">
+<!--
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
+-->
+	<script src="js/easy-button.js"></script>
+
         <title>Hello World</title>
     </head>
     <body>
-        <div id='map'></div>
-	<div id='info'></div>
-        <script src="cordova.js"></script>
+        <div id="all">
+          <div id='map'></div>
+	  <!-- <div id='info'></div> -->
+        </div>
         <script src="js/index.js"></script>
     </body>
 </html>

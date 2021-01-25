@@ -33,18 +33,63 @@ body {
     padding:0px;
     /* Padding to avoid the "unsafe" areas behind notches in the screen */
     padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-    text-transform:uppercase;
     width:100%;
 }
 
-html, body, #map {
+html, body {
     height: 100%;
     width: 100cv;
 }
-#info {
-    height: 20%;
+#all {
+    height: 100%;
     width: 100cv;
 }
+#map {
+    height: 100%;
+    width: 100cv;
+}
+
+.sondeTooltip {
+   color: #333;
+   font-size: 11px;
+   font-weight: bold;
+}
+.text-speed {
+   color: #008cba;
+}
+
+.fitbutton {
+  font-size: 1.5em;
+}
+.target {
+  font-size: 1.5em;
+}
+.infobutton {
+  font-size: 1.5em;
+  font-family: 'Courier New', monospace;
+}
+
+.leaflet-center {
+  position: relative !important;
+  left: 0;
+  right: 0;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.leaflet-center .leaflet-control {
+   bottom: 0;
+}
+
+.leaflet-control-container .leaflet-control-bottomcenter {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
 
 /* Portrait layout (default) */
 .app {

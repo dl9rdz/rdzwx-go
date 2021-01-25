@@ -15,13 +15,15 @@
   "devDependencies": {
     "cordova-android": "^9.0.0",
     "cordova-browser": "^6.0.0",
+    "cordova-plugin-inappbrowser": "^4.1.0",
     "cordova-plugin-whitelist": "^1.3.4",
     "de-dl9rdz-rdzwx": "https://github.com/dl9rdz/rdzwx-plugin.git"
   },
   "cordova": {
     "plugins": {
       "cordova-plugin-whitelist": {},
-      "de-dl9rdz-rdzwx": {}
+      "de-dl9rdz-rdzwx": {},
+      "cordova-plugin-inappbrowser": {}
     },
     "platforms": [
       "android"
