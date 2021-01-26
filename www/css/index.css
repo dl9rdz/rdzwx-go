@@ -69,6 +69,71 @@ html, body {
   font-family: 'Courier New', monospace;
 }
 
+.infodiv {
+  background-color:  #ecfedf;
+  padding: 5px 19px;
+  margin: 0px 0px !important;
+}
+.infodiv td {
+  padding: 0px;
+  position: relative;
+  top: -5px;
+}
+.infodiv table {
+  border-spacing: 0;
+}
+
+.infotdr {
+  padding: 0px;
+  float: right;
+}
+
+.infocontent p {
+  display: inline-block;
+}
+.infocontent {
+  clear: both;
+}
+.infocontentl3 {
+  color: #008cba;
+}
+
+@media (orientation: portrait) {
+.infotable {
+  width: 75vw;
+}
+.infocontentl1 {
+  font-size: 7vw;
+}
+.infocontentl2 {
+  font-size: 5vw;
+}
+.infocontentl3 {
+  font-size: 6vw;
+}
+.infocontentl4 {
+  font-size: 5vw;
+}
+}
+
+@media (orientation: landscape) {
+.infotable {
+  width: 60vw;
+}
+.infocontentl1 {
+  font-size: 4vw;
+}
+.infocontentl2 {
+  font-size: 3vw;
+}
+.infocontentl3 {
+  font-size: 4vw;
+}
+.infocontentl4 {
+  font-size: 3vw;
+}
+}
+
 .leaflet-center {
   position: relative !important;
   left: 0;
