@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget id="de.dl9rdz" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>rdzwx-go</name>
+    <name>rdzSondyGO</name>
     <description>
         A sample Apache Cordova application that uses rdzwx-plugin.
     </description>
@@ -23,6 +23,7 @@
     <platform name="android">
         <allow-intent href="market:*" />
     </platform>
+    <icon src="res/icon.png"/>
 
     <preference name="GradlePluginKotlinEnabled" value="true" />
     <preference name="GradlePluginKotlinCodeStyle" value="official" />

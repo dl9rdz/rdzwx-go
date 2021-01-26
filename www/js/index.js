@@ -281,11 +281,17 @@ function getPrediction() {
         "burst_altitude": lastObj.obj.alt+2,
         "profile": "standard_profile",
     }
-    if(lastObj.obj.vs > 0) {
+    var vs = lastObj.obj.vs;
+    if( markers[lastObj.obj.id] && markers[lastObj.obj.id].vsavg ) {
+      vs = markers[lastObj.obj.id].vsavg;
+      if(vs*lastObj.obj.vs < 0) vs=lastObj.obj.vs;
+    }
+    if(vs > 0) {
 	// still climbing up
+      tParams["ascent_rate"] = vs;
       tParams["burst_altitude"] = 35000;
     } else {
-      tParams["descent_rate"] = calc_drag( -lastObj.obj.vs, lastObj.obj.alt );
+      tParams["descent_rate"] = calc_drag( -vs, lastObj.obj.alt );
     }
     const xhr = new XMLHttpRequest();
     const url = TAWHIRI + formatParams(tParams);
@@ -306,6 +312,17 @@ function getPrediction() {
 	    if( lastObj.land ) { lastObj.land.remove(map); }
 	    lastObj.land = new L.marker(latlons.slice(-1)[0], {icon: landingIcon});
 	    lastObj.land.addTo(map);
+	    var lastpt = traj1.splice(-1)[0];
+	    lastpt.datetime = new Date(lastpt.datetime).toISOString().split(".")[0] + "Z";
+	    var popup = '<div class="pop-header"><img src="img/landing.png"><h4> Landing Point </h4></div>' +
+                       '<strong>Time: ' + lastpt.datetime + '</strong><br/>' +
+                       '<strong>(' + new Date(lastpt.datetime).toTimeString().split(" (")[0] + ')</strong><br/>' +
+                       '<p> Altitude: ' + lastpt.altitude.toFixed(2) + ' m'+ 
+                       '</br>Asc. Rate: ' + tParams["ascent_rate"].toFixed(2)  + ' m/s'+
+                       '</br>Burst: ' + tParams["burst_altitude"]  + ' m'+
+                       '</br>Desc. Rate: ' + tParams["descent_rate"].toFixed(2) + ' m/s</p>' +
+                       '';
+	    lastObj.land.bindPopup(popup);
         }
     }
     xhr.open('GET', url, true);
@@ -365,6 +382,7 @@ function update(obj) {
       if(pos.equals(marker.getLatLng())) { console.log("update: position unchanged"); }
       else { marker.path.addLatLng(pos); console.log("update: appending new position"); }
       tooltip = marker.tt;
+      marker.vsavg = 0.9 * marker.vsavg + 0.1 * obj.vs;
     } else {
       console.log("creating new marker");
       marker = new L.marker(pos, {icon: ballonIcon});
@@ -377,6 +395,7 @@ function update(obj) {
       tooltip = L.tooltip({ direction: 'right', permanent: true, className: 'sondeTooltip', offset: [10,0], interactive: false, opacity: 0.6 });
       marker.bindTooltip(tooltip);
       marker.tt = tooltip;
+      marker.vsavg = obj.vs;
    }
    var tt = '<div class="tooltip-container">' + obj.id + '<div class="text-speed tooltip-container">' + obj.alt + 'm '+ obj.vs +'m/s ' + (obj.hs*3.6).toFixed(1) + 'km/h </div></div>';
    tooltip.setContent(tt);

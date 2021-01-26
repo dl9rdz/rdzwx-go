@@ -134,6 +134,16 @@ html, body {
 }
 }
 
+.pop-header {
+    display: flex;
+    align-items:center;
+}
+.pop-header > img{
+        display: inline-block;
+        height: 16px;
+
+}
+
 .leaflet-center {
   position: relative !important;
   left: 0;
