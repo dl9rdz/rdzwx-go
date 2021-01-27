@@ -98,6 +98,16 @@ html, body {
   color: #008cba;
 }
 
+.infocontent .lifenessinfo {
+  color: #ff0000;
+}
+.infocontent-status0 .lifenessinfo {
+  color: #00ff00; 
+}
+.infocontent-status2 .lifenessinfo {
+  color: #ffff00; 
+}
+
 @media (orientation: portrait) {
 .infotable {
   width: 75vw;

@@ -33,7 +33,8 @@ var myposMarker = null;
 var ballonIcon, landIcon;
 var infobox = null;
 
-var checkMark = "&#9989;";
+//var checkMark = "&#9989;";
+var checkMark = "&#x2714;";
 var crossMark = "&#x274C;";
 
 // add "bottom center" to leaflet
@@ -63,6 +64,7 @@ function onDeviceReady() {
     tfatlas = L.tileLayer('https://{s}.tile.thunderforest.com/mobile-atlas/{z}/{x}/{y}.png?apikey=' + tfapikey, {attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'}),
     opentopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {attribution: 'Kartendaten: &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende, <a href="http://viewfinderpanoramas.org">SRTM</a> | Kartendarstellung: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'}),
     sat  = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'}),
+    offline = L.tileLayer('file:///android_asset/www/tiles/{z}/{x}/{y}.png', {attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxNativeZoom: 14} );
     Stamen_TonerHybrid = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-hybrid/{z}/{x}/{y}{r}.{ext}', {
 	    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 	    subdomains: 'abcd',
@@ -87,7 +89,8 @@ function onDeviceReady() {
 	"OpenCycleMap": tfcycle,
 	"OpenTopoMap" : opentopo,
 	"Sat": sat,
-	"Hybdir": hybrid,
+	"Hybdir": hybrid
+	<!-- 'Offline': offline -->
     };
 
     var baseMapControl = new L.control.layers(baseMaps, {}, { collapsed: true, position: 'topright' } ).addTo(map);
@@ -147,20 +150,28 @@ function onDeviceReady() {
 	if(this._contentShown == false) { this._showContent(); } else { this._hideContent(); }
       },
       setContent: function(obj) {
+        //alert(JSON.stringify(obj));
 	if(!this._infoContentContainer) return;
  	if(obj.type == null) obj.type = "RS41";  // TODO fix in plugin
-        distance = L.latLng(obj).distanceTo(L.latLng(mypos))
-        if(distance>9999) { distance = distance.toFixed(0); }
-	else { distance = distance.toFixed(1); }
-	distance = "d=" + distance + "m";
-	l1 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + obj.type + "</td><td class=\"infotdr\">" + obj.ser + "</td></tr></table>";
-	l2 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + obj.freq.toFixed(3) + " MHz </td><td class=\"infotdr\" style=\”font-size:0.9em;\">" + (0.001*obj.afc).toFixed(2) + " kHz</td></tr></table>";
+	distance = "";
+	if(obj.validPos) {
+           distance = L.latLng(obj).distanceTo(L.latLng(mypos))
+           if(distance>9999) { distance = distance.toFixed(0); }
+	   else { distance = distance.toFixed(1); }
+	   distance = "d=" + distance + "m";
+	}
+	sym = "<span class=\"lifenessinfo\">&#x2B24; </span>";
+	l1 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + sym + obj.type + "</td><td class=\"infotdr\">" + obj.ser + "</td></tr></table>";
+	l2 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + (1*obj.freq).toFixed(3) + " MHz </td><td class=\"infotdr\" style=\”font-size:0.9em;\">" + (0.001*obj.afc).toFixed(2) + " kHz</td></tr></table>";
 	l3 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + obj.alt.toFixed(0) + "m</td><td class=\"infotd\">" + obj.vs + "m/s </td><td class=\"infotdr\">" + (obj.hs*3.6).toFixed(1) + "km/h </td></tr></table>";
 	l4 = "<table class=\"infotable\"><tr><td class=\"infotd\">RSSI: " + -0.5*obj.rssi + " </td><td class=\"infotdr\">" + distance + " </td></tr></table>";
 	this._infoContentL1.innerHTML = l1;
 	this._infoContentL2.innerHTML = l2;
 	this._infoContentL3.innerHTML = l3;
 	this._infoContentL4.innerHTML = l4;
+      },
+      setStatus: function(status) {  // 0: rx, 1=to, 2=err, ...
+	 L.DomUtil.setClass(this._infoContentL1, "infocontent infocontentl1 infocontent-status"+status);
       },
       _hideContent: function(ev) {
 	this._infoBody.style.display = 'none';
@@ -197,10 +208,10 @@ function onDeviceReady() {
       ttgourl: "http://192.168.42.1",
       states: [{ stateName: 'offline',
                  icon:      '<span class="ttgostatus">' + crossMark + '</span>'
-		 //, onClick: function(btn, map) { btn.state('online'); }
+		 , onClick: function(btn, map) { btn.state('online'); }
                },
 	       { stateName: 'online',
-                 icon:      '<span class="ttgostatus">' + checkMark + '</span>',
+                 icon:      '<span style="color: transparent; text-shadow: 0 0 0 #009900; font-size:15pt" class="ttgostatus">' + checkMark + '</span>',
 		 onClick: function(btn, map) { cordova.InAppBrowser.open(btn.ttgourl, '_blank', "location=yes"); }
 	       }
 	      ],
@@ -213,9 +224,9 @@ function onDeviceReady() {
 
     ballonIcon = L.icon({
 	  iconUrl: "img/ballon.png",
-          iconSize: [17,22],
-          iconAnchor: [9,22],
-          popupAnchor: [0,-28]
+          iconSize: [32,32],
+          iconAnchor: [16,32],
+          popupAnchor: [0,-32]
     });
     landingIcon = L.icon({
 	  iconUrl: "img/landing.png",
@@ -225,9 +236,10 @@ function onDeviceReady() {
     });
     ready = 1;
     RdzWx.start("testarg", callBack);
+    setInterval(periodicStatusCheck, 1000);
 
     // just for testing
-    update( {id: "A1234567", lat: 48, lon: 13, alt: 10000, vs: 10, hs: 30, rssi: -90, rxStat: "||||||||||||....", type: "RS41", freq: "400.000", afc: "+1.2", ser: "A1234567"} );
+    update( {res: 0, validId: 1, validPos: 1, id: "A1234567", lat: 48, lon: 13, alt: 10000, vs: 10, hs: 30, rssi: -90, rxStat: "||||||||||||....", type: "RS41", freq: "400.000", afc: "+1.2", ser: "A1234567"} );
     updateMypos(mypos);
 }
 
@@ -297,7 +309,10 @@ function getPrediction() {
     const url = TAWHIRI + formatParams(tParams);
     xhr.onreadystatechange = function() {
         if(xhr.readyState === 4) { 
-	    console.log(xhr.response);
+	    if( (xhr.status/100)!=2 ) {
+		alert("Request failed: "+xhr.statusText);
+		return;
+	    }
 	    var pred = JSON.parse(xhr.response);
             var traj0 = pred.prediction[0].trajectory;  // 0 is ascent, 1 is descent...
             var traj1 = pred.prediction[1].trajectory;  // 0 is ascent, 1 is descent...
@@ -338,9 +353,9 @@ function callBack(arg) {
 	return;
     }
     console.log("callback: "+JSON.stringify(arg));
-    if(obj.id || obj.msgtype) {
-       update(obj);
-    }
+    //if(obj.res || obj.msgtype) {
+    update(obj);
+    //}
 }
 
 function updateMypos(obj) {
@@ -356,12 +371,25 @@ function updateMypos(obj) {
   }
 }
 
+var lastMsgTS = 0;
+
+function periodicStatusCheck() {
+    now = new Date();
+    if( lastMsgTS && (now-lastMsgTS) > 5000 ) {
+	// handle connection broken (if still connnected)
+	//alert("Closing conn: "+now+" vs "+lastMsgTS);
+	console.log("no data for 5 seconds, closing connection to rdzTTGOsonde");
+	RdzWx.closeconn("", function(){});
+    }
+}
+
 function update(obj) {
-    console.log("update called");
     if(!ready || !map) {
  	console.log("not ready");
 	return;
     }
+    lastMsgTS = new Date();
+    console.log("update: "+lastMsgTS);
     if(obj.msgtype) {
 	if(obj.msgtype == "ttgostatus") {
 	    ttgoStatus.ttgourl = 'http://' + obj.ip;
@@ -370,10 +398,23 @@ function update(obj) {
 	if(obj.msgtype == "gps") {
 	    updateMypos(obj);
 	}
+	console.log("update: type="+obj.msgtype);
 	return;
     }
 
+    // position update
+    console.log("Pos update: "+JSON.stringify(obj));
+    infobox.setContent(obj);
+    infobox.setStatus(obj.res);
+    if( (!obj.validId) || (!obj.validPos) || (obj.res!=0) ) {
+	// no valid pos...
+	// res: 1=Timeout, 2=CRC error, 3=unknown, 4=no position
+	console.log("valid: "+(!obj.validId)+" validPos: "+(!obj.validPos)+" res: "+(obj.res!=0));
+        console.log("update with no valid pos");
+        return;
+    }
     lastObj.obj = obj;
+    console.log("Good update!");
     var pos = new L.LatLng(obj.lat, obj.lon);
     var marker;
     var tooltip;
@@ -392,14 +433,13 @@ function update(obj) {
       markers[obj.id] = marker;
       marker.addTo(map);
       poly.addTo(map);
-      tooltip = L.tooltip({ direction: 'right', permanent: true, className: 'sondeTooltip', offset: [10,0], interactive: false, opacity: 0.6 });
+      tooltip = L.tooltip({ direction: 'right', permanent: true, className: 'sondeTooltip', offset: [10,-16], interactive: false, opacity: 0.6 });
       marker.bindTooltip(tooltip);
       marker.tt = tooltip;
       marker.vsavg = obj.vs;
    }
    var tt = '<div class="tooltip-container">' + obj.id + '<div class="text-speed tooltip-container">' + obj.alt + 'm '+ obj.vs +'m/s ' + (obj.hs*3.6).toFixed(1) + 'km/h </div></div>';
    tooltip.setContent(tt);
-   infobox.setContent(obj);
 
    marker.setLatLng(pos);
    marker.update();  // necessary?
