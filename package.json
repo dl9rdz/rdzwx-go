@@ -1,7 +1,7 @@
 {
   "name": "de.dl9rdz",
   "displayName": "rdzwx-go",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "description": "A sample Apache Cordova application that uses rdzwx-plugin.",
   "main": "index.js",
   "scripts": {
@@ -22,11 +22,12 @@
   "cordova": {
     "plugins": {
       "cordova-plugin-whitelist": {},
-      "de-dl9rdz-rdzwx": {},
-      "cordova-plugin-inappbrowser": {}
+      "cordova-plugin-inappbrowser": {},
+      "de-dl9rdz-rdzwx": {}
     },
     "platforms": [
-      "android"
+      "android",
+      "browser"
     ]
   }
 }

@@ -36,8 +36,10 @@
         <meta name="color-scheme" content="light dark">
         <link rel="stylesheet" href="css/index.css">
 	<link rel="stylesheet" href="css/leaflet.css">
+	<link rel="stylesheet" href="css/leaflet.contextmenu.css">
         <script src="cordova.js"></script>
 	<script src="js/leaflet.js"></script>
+	<script src="js/leaflet.contextmenu.js"></script>
 	<link rel="stylesheet" href="css/easy-button.css">
 <!--
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.css">
@@ -49,8 +51,17 @@
     </head>
     <body>
         <div id="all">
+	  <div id="toolbar">
+	  <a id="toolbarclose" class="leaflet-popup-close-button" style="cursor: pointer; float: right;">x</a>
+	  <h2>rdzSondyGO v1.0.1</h2>
+          <p>Copyright &copy; 2021 Hansi Reiser, dl9rdz</p>
+          <p>see <a href="https://github.com/dl9rdz/rdzwx-go">https://github.com/dl9rdz/rdzwx-go</a> for details</p>
+	  <p>Apache License Version 2.0</p>
+	  <hr>
+	  <div id="toolbaritems">
+          </div>
+	  </div>
           <div id='map'></div>
-	  <!-- <div id='info'></div> -->
         </div>
         <script src="js/index.js"></script>
     </body>

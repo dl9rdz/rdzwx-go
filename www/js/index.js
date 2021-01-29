@@ -25,12 +25,14 @@ document.addEventListener('deviceready', onDeviceReady, false);
 var markers = {};
 var ready = 0;
 var map = null;
-var lastObj = { obj: null, pred: null, land: null };
+/////var lastObj = { obj: null, marker: null, /*no longer used: */pred: null, land: null };
+var lastMarker = null;
+
 var mypos = {lat: 48.56, lon: 13.43};
 //var mypos = {lat: 48.1, lon: 13.1};
 var myposMarker = null;
 
-var ballonIcon, landIcon;
+var ballonIcon, landIcon, burstIcon;
 var infobox = null;
 
 //var checkMark = "&#9989;";
@@ -78,8 +80,7 @@ function onDeviceReady() {
     });
     var hybrid = new L.layerGroup([sat, Stamen_TonerHybrid]);
 
-    map = L.map('map', { layers: [osm] } ).setView([48,13],12);
-
+    map = L.map('map', { layers: [osm], contextmenu: true, zoomControl: false} ).setView([48,13],12);
     var baseMaps = {
 	"Openstreetmap": osm,
 	"Landscape": tfland,
@@ -99,12 +100,73 @@ function onDeviceReady() {
 
     L.control.scale({metric: true, imperial: false, position: "bottomright"}).addTo(map);
 
-    // prediction
-    L.easyButton('<span class="target">&target;</span>', function(btn, map) {
-        getPrediction();
+    // main menu
+    L.easyButton('<span class="target">&equiv;</span>', function(btn, map) {
+        toolbar = L.DomUtil.get("toolbar");
+	L.DomUtil.addClass(toolbar, "open");
+	toolbarclose = L.DomUtil.get("toolbarclose");
+	L.DomEvent.on(toolbarclose, 'click', function(e) {L.DomUtil.removeClass(toolbar, "open")});
     }).addTo(map);
 
+    new L.Control.Zoom({position: "topleft" }).addTo(map);
+
+    // prediction
+    L.easyButton('<span id="targetbtn" class="target">&target;</span>', function(btn, map) {
+        getPrediction();
+    }).addTo(map);
+    t = L.DomUtil.get("targetbtn");
+    if(t) { L.DomEvent.on(t, 'contextmenu', function(e) { tawhiriCtl.toggle(); } ); }
+
     map.locate({setView: true, maxZoom: 16});
+
+    var TawhiriCtl = L.Control.extend({
+      options: { position: 'bottomcenter' },
+      onAdd: function(map) {
+        var tawhiriContainer = L.DomUtil.create('div', 'leaflet-control-layers leaflet-control');
+        var tawhiriBody = L.DomUtil.create('div', 'leaflet-popup-content-wrapper');
+        tawhiriContainer.appendChild(tawhiriBody);
+        var tawhiriContent = L.DomUtil.create('div', 'leaflet-popup-content tawhiridiv');
+        tawhiriBody.appendChild(tawhiriContent);
+	var infoCloseButton = L.DomUtil.create('a', 'leaflet-popup-close-button');
+	tawhiriContainer.appendChild(infoCloseButton);
+	infoCloseButton.innerHTML = 'x';
+	infoCloseButton.setAttribute('style', 'cursor: pointer');
+	var infoContent = L.DomUtil.create('div', 'tawhiricontent');
+	infoContent.innerHTML = '<h3>Tawhiri prediction parameter</h3><form><table>' +
+	  '<tr><td>Ascent rate:</td><td><input type="number" size="5" value="5.0" step="any" id="tawhiri-ascent"></input></td><td>m/s</td></tr>' +
+	  '<tr><td>Burst alt:</td><td><input type="number" size="5" value="35000" step="any" id="tawhiri-burst"></input></td><td>m</td></tr>' +
+	  '<tr><td>Sea-level descent rate:</td><td><input type="number" size="5" value="5.0" step="any" id="tawhiri-descent"></input></td><td>m/s</td></tr>' +
+	  '<tr><td>Use current v<sub>v</sub>:</td><td><input type="checkbox" checked="yes" id="tawhiri-current"></input></td><td></td><tr>' +
+	  '<tr><td colspan="3"><p class="tawhirismall">If checked: On ascent: ascent rate := v<sub>v</sub><br>' +
+	  'On descent: descent rate := estimate_sea_level(v<sub>v</sub>)</p></td></tr>';
+          '</table></form>'+
+        tawhiriContent.appendChild(infoContent);
+	this._tawhiriBody = tawhiriBody;
+	this._infoCloseButton = infoCloseButton;
+	this._showContent();
+
+	L.DomEvent.disableClickPropagation(tawhiriContainer);
+	L.DomEvent.on(infoCloseButton, 'click', L.DomEvent.stop);
+	L.DomEvent.on(infoCloseButton, 'click', this._hideContent, this);
+        return tawhiriContainer;
+      },
+      toggle: function() {
+        if(this._contentShown==false) { this._showContent(); } else { this._hideContent(); }
+      },
+      _hideContent: function(ev) {
+	this._tawhiriBody.style.display = 'none';
+	this._infoCloseButton.style.display = 'none';
+	this._contentShown = false;
+      },
+      _showContent: function(ev) {
+	this._tawhiriBody.style.display = '';
+	this._infoCloseButton.style.display = '';
+	this._contentShown = true;
+      },
+    })
+    tawhiriCtl = new TawhiriCtl();
+    tawhiriCtl.addTo(map);
+      
 
     var Infobox = L.Control.extend({
       options: { position: 'bottomcenter' },
@@ -154,12 +216,10 @@ function onDeviceReady() {
 	if(!this._infoContentContainer) return;
  	if(obj.type == null) obj.type = "RS41";  // TODO fix in plugin
 	distance = "";
-	if(obj.validPos) {
-           distance = L.latLng(obj).distanceTo(L.latLng(mypos))
-           if(distance>9999) { distance = distance.toFixed(0); }
-	   else { distance = distance.toFixed(1); }
-	   distance = "d=" + distance + "m";
-	}
+        distance = L.latLng(obj).distanceTo(L.latLng(mypos))
+        if(distance>9999) { distance = distance.toFixed(0); }
+	else { distance = distance.toFixed(1); }
+	distance = "d=" + distance + "m";
 	sym = "<span class=\"lifenessinfo\">&#x2B24; </span>";
 	l1 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + sym + obj.type + "</td><td class=\"infotdr\">" + obj.ser + "</td></tr></table>";
 	l2 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + (1*obj.freq).toFixed(3) + " MHz </td><td class=\"infotdr\" style=\”font-size:0.9em;\">" + (0.001*obj.afc).toFixed(2) + " kHz</td></tr></table>";
@@ -195,11 +255,11 @@ function onDeviceReady() {
     // fit map to enclosing rectangle of (last pos, own pos)
     L.easyButton('<span class="fitbutton">&#9635;</span>', function(btn, map) {
         // last item
-	if(lastObj.obj == null) return;
+	if(lastMarker == null) return;
         // self position
 	if(mypos == null) return;
-	var items = [ [lastObj.obj.lat, lastObj.obj.lon], [mypos.lat, mypos.lon] ];
-	if(lastObj.land) { items.push( lastObj.land.getLatLng() ); }
+	var items = [ [lastMarker.obj.lat, lastMarker.obj.lon], [mypos.lat, mypos.lon] ];
+	if(lastMarker.land) { items.push( lastMarker.land.getLatLng() ); }
 	b = L.latLngBounds(items);
 	map.fitBounds(b);
     }).addTo(map);
@@ -234,12 +294,18 @@ function onDeviceReady() {
           iconAnchor: [12,12],
           popupAnchor: [0,0]
     });
+    burstIcon = L.icon({
+	  iconUrl: "img/pop-marker.png",
+          iconSize: [16,16],
+          iconAnchor: [8,8],
+          popupAnchor: [0,0]
+    });
     ready = 1;
     RdzWx.start("testarg", callBack);
     setInterval(periodicStatusCheck, 1000);
 
     // just for testing
-    update( {res: 0, validId: 1, validPos: 1, id: "A1234567", lat: 48, lon: 13, alt: 10000, vs: 10, hs: 30, rssi: -90, rxStat: "||||||||||||....", type: "RS41", freq: "400.000", afc: "+1.2", ser: "A1234567"} );
+    update( {res: 0, validId: 1, validPos: 127, id: "A1234567", lat: 48, lon: 13, alt: 10000, vs: 10, hs: 30, rssi: -90, rxStat: "||||||||||||....", type: "RS41", freq: "400.000", afc: "+1.2", ser: "A1234567"} );
     updateMypos(mypos);
 }
 
@@ -277,33 +343,50 @@ function calc_drag(drag,alt){
         return drag;
 }
 
-function getPrediction() {
+function removePrediction(marker) {
+  if(marker.pred) { marker.pred.remove(map); }
+  if(marker.land) { marker.land.remove(map); }
+  if(marker.burst) { marker.burst.remove(map); }
+}
+
+function getPrediction(refobj) {
     TAWHIRI = 'http://predict.cusf.co.uk/api/v1';
-    if(lastObj.obj == null) {
+    if(refobj == null) { refobj = lastMarker; }
+    if(refobj == null) {
         alert("no object available");
         return;
     }
+    // lookup parameters from form
+    var burst = document.getElementById("tawhiri-burst").value;
+    if(burst) burst= parseInt(burst); else burst=35000;
+    if(refobj.obj.alt > burst) burst = refobj.obj.alt;
+    var asc = document.getElementById("tawhiri-ascent").value;
+    if(asc) asc=parseFloat(asc); else asc=5.0;
+    var desc = document.getElementById("tawhiri-descent").value;
+    if(desc) desc=parseFloat(desc); else desc=5.0;
+    var usecurrent = document.getElementById("tawhiri-current").checked;
+
     var tParams = {
-        "launch_latitude": lastObj.obj.lat,
-        "launch_longitude": lastObj.obj.lon,
-        "launch_altitude": lastObj.obj.alt,
+        "launch_latitude": refobj.obj.lat,
+        "launch_longitude": refobj.obj.lon,
+        "launch_altitude": refobj.obj.alt,
         "launch_datetime": new Date().toISOString().split('.')[0] + 'Z',
-        "ascent_rate": 5,
-        "descent_rate": 5,
-        "burst_altitude": lastObj.obj.alt+2,
+        "ascent_rate": asc,
+        "descent_rate": desc,
+        "burst_altitude": refobj.obj.alt+2,
         "profile": "standard_profile",
     }
-    var vs = lastObj.obj.vs;
-    if( markers[lastObj.obj.id] && markers[lastObj.obj.id].vsavg ) {
-      vs = markers[lastObj.obj.id].vsavg;
-      if(vs*lastObj.obj.vs < 0) vs=lastObj.obj.vs;
+    var vs = refobj.obj.vs;
+    if( refobj.vsavg ) {
+      vs = refobj.vsavg;
+      if(vs*refobj.obj.vs < 0) vs=refobj.obj.vs;
     }
     if(vs > 0) {
 	// still climbing up
-      tParams["ascent_rate"] = vs;
-      tParams["burst_altitude"] = 35000;
+      tParams["ascent_rate"] = usecurrent ? vs : asc;
+      tParams["burst_altitude"] = burst;
     } else {
-      tParams["descent_rate"] = calc_drag( -vs, lastObj.obj.alt );
+      tParams["descent_rate"] = usecurrent ? calc_drag( -vs, refobj.obj.alt ) : desc;
     }
     const xhr = new XMLHttpRequest();
     const url = TAWHIRI + formatParams(tParams);
@@ -322,11 +405,17 @@ function getPrediction() {
 	    //alert("path: "+JSON.stringify(traj));
       	    poly = L.polyline(latlons, { opacity: 0.5, color: '#EE0000', dashArray: '8, 6'} );
             poly.addTo(map);
-	    if( lastObj.pred  ) { lastObj.pred.remove(map); }
-            lastObj.pred = poly;
-	    if( lastObj.land ) { lastObj.land.remove(map); }
-	    lastObj.land = new L.marker(latlons.slice(-1)[0], {icon: landingIcon});
-	    lastObj.land.addTo(map);
+	    if( refobj.pred  ) { refobj.pred.remove(map); }
+            refobj.pred = poly;
+	    if( refobj.land ) { refobj.land.remove(map); }
+	    refobj.land = new L.marker(latlons.slice(-1)[0], {icon: landingIcon});
+	    refobj.land.addTo(map);
+	    if( refobj.burst ) { refobj.burst.remove(map); }
+	    if( vs>0 ) { // still climbing, so add burst mark
+	       var b = traj0.slice(-1)[0];
+	       refobj.burst = new L.marker( [b.latitude, b.longitude], {icon: burstIcon});
+               refobj.burst.addTo(map);
+            }
 	    var lastpt = traj1.splice(-1)[0];
 	    lastpt.datetime = new Date(lastpt.datetime).toISOString().split(".")[0] + "Z";
 	    var popup = '<div class="pop-header"><img src="img/landing.png"><h4> Landing Point </h4></div>' +
@@ -337,7 +426,7 @@ function getPrediction() {
                        '</br>Burst: ' + tParams["burst_altitude"]  + ' m'+
                        '</br>Desc. Rate: ' + tParams["descent_rate"].toFixed(2) + ' m/s</p>' +
                        '';
-	    lastObj.land.bindPopup(popup);
+	    refobj.land.bindPopup(popup);
         }
     }
     xhr.open('GET', url, true);
@@ -403,6 +492,10 @@ function update(obj) {
     }
 
     // position update
+    if( ((obj.validPos&0x03) != 0x03) || ((obj.validPos&0x80)!=0) ) {   // latitude and longitude are invalid
+       console.log("invalid position, ignoring");
+       return;
+    }
     console.log("Pos update: "+JSON.stringify(obj));
     infobox.setContent(obj);
     infobox.setStatus(obj.res);
@@ -413,7 +506,6 @@ function update(obj) {
         console.log("update with no valid pos");
         return;
     }
-    lastObj.obj = obj;
     console.log("Good update!");
     var pos = new L.LatLng(obj.lat, obj.lon);
     var marker;
@@ -426,7 +518,29 @@ function update(obj) {
       marker.vsavg = 0.9 * marker.vsavg + 0.1 * obj.vs;
     } else {
       console.log("creating new marker");
-      marker = new L.marker(pos, {icon: ballonIcon});
+      marker = new L.marker(pos, {icon: ballonIcon,
+	contextmenu: true,
+	contextmenuItems: [{
+/*
+	    text: "Show info",
+	    callback: function(e) { alert("not available yet"); }
+	}, {
+*/
+	    text: "Make prediction",
+	    callback: function(e) { getPrediction(marker); }
+	}, {
+	    text: "Configure prediction",
+	    callback: function(e) { tawhiriCtl.toggle(); }
+	}, {
+	    text: "Remove prediction",
+            callback: function(e) { removePrediction(marker); }
+	}, {
+	    separator: true
+        }, {
+	    text: "Delete item",
+            callback: function(e) { removePrediction(marker); map.removeLayer(marker); if(marker==lastMarker) lastMarker=null; }
+	}]
+      });
       poly = L.polyline(pos, { opacity: 0.5, color: '#3388ff'} );
       marker.path = poly;
       //marker.on('clock', function() { showMarkerInfoWindow( obj.id, pos) } );
@@ -437,11 +551,19 @@ function update(obj) {
       marker.bindTooltip(tooltip);
       marker.tt = tooltip;
       marker.vsavg = obj.vs;
-   }
-   var tt = '<div class="tooltip-container">' + obj.id + '<div class="text-speed tooltip-container">' + obj.alt + 'm '+ obj.vs +'m/s ' + (obj.hs*3.6).toFixed(1) + 'km/h </div></div>';
-   tooltip.setContent(tt);
+    }
+    lastMarker = marker;
+    lastMarker.obj = obj;
+    var tt = '<div class="tooltip-container">' + obj.id + '<div class="text-speed tooltip-container">' + obj.alt + 'm '+ obj.vs +'m/s ' + (obj.hs*3.6).toFixed(1) + 'km/h </div></div>';
+    tooltip.setContent(tt);
 
-   marker.setLatLng(pos);
-   marker.update();  // necessary?
+    marker.setLatLng(pos);
+    marker.update();  // necessary?
 }
 
+function createButton(label, container) {
+  var btn = L.DomUtil.create("button", "", container);
+  btn.setAttribute("type", "button");
+  btn.innerHTML = label;
+  return btn;
+}

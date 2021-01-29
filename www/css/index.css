@@ -49,6 +49,25 @@ html, body {
     width: 100cv;
 }
 
+#toolbar {
+ background: rgba(255, 255, 255, 1);
+  opacity: .6;
+  width: 100vw;
+  height: 600px;
+  height: 100vh;
+  position: absolute;
+  left: -100vw;
+  z-index: 2000;
+  transition: .6s left;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#toolbar.open {
+  left: 0;
+  opacity: 0.9;
+}
+
 .sondeTooltip {
    color: #333;
    font-size: 11px;
@@ -86,6 +105,34 @@ html, body {
 .infotdr {
   padding: 0px;
   float: right;
+}
+
+.tawhiridiv {
+  background-color:  #ecfedf;
+  padding: 1px 8px;
+  margin: 0px 0px !important;
+}
+.tawhiridiv td {
+  padding: 0px;
+  position: relative;
+}
+.tawhiridiv table {
+  border-spacing: 0;
+}
+.tawhiricontent {
+  clear: both;
+  font-size: 11pt;
+}
+.tawhiricontent input {
+  font-size: 11pt;
+  width: 5em;
+}
+.tawhiricontent input[type=checkbox] {
+   -webkit-transform: scale(1.5) !important;
+}
+.tawhirismall {
+  margin: 0pt !important;
+  font-size: 10pt;
 }
 
 .infocontent p {
@@ -142,6 +189,29 @@ html, body {
 .infocontentl4 {
   font-size: 3vw;
 }
+}
+
+.ballon-menu .leaflet-popup-tip {
+  background: rgba(0,0,0,0) !important;
+  box-shadow: none !important;
+  width: 0px;
+  height: 0px;
+}
+
+.ballon-drop {
+   background:#f8f8f8;
+   border: 1px solid #ccc;
+   border-radius:3px;
+}
+.ballon-drop a {
+   color:#333;
+   display: block;
+   padding: 5px 10px;
+   text-decoration:none;
+}
+.ballon-drop a:hover {
+   background:#333;
+   color:#fff;
 }
 
 .pop-header {
