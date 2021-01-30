@@ -28,7 +28,7 @@ var map = null;
 /////var lastObj = { obj: null, marker: null, /*no longer used: */pred: null, land: null };
 var lastMarker = null;
 
-var mypos = {lat: 48.56, lon: 13.43};
+var mypos = {lat: 48.56, lon: 13.43, hdop: 25};
 //var mypos = {lat: 48.1, lon: 13.1};
 var myposMarker = null;
 
@@ -111,11 +111,10 @@ function onDeviceReady() {
     new L.Control.Zoom({position: "topleft" }).addTo(map);
 
     // prediction
-    L.easyButton('<span id="targetbtn" class="target">&target;</span>', function(btn, map) {
+    tbtn = L.easyButton('<span id="targetbtn" class="target">&target;</span>', function(btn, map) {
         getPrediction();
     }).addTo(map);
-    t = L.DomUtil.get("targetbtn");
-    if(t) { L.DomEvent.on(t, 'contextmenu', function(e) { tawhiriCtl.toggle(); } ); }
+    L.DomEvent.on(tbtn.button, 'contextmenu', function(e) { tawhiriCtl.toggle(); } ); 
 
     map.locate({setView: true, maxZoom: 16});
 
@@ -143,7 +142,7 @@ function onDeviceReady() {
         tawhiriContent.appendChild(infoContent);
 	this._tawhiriBody = tawhiriBody;
 	this._infoCloseButton = infoCloseButton;
-	this._showContent();
+	//this._showContent();
 
 	L.DomEvent.disableClickPropagation(tawhiriContainer);
 	L.DomEvent.on(infoCloseButton, 'click', L.DomEvent.stop);
@@ -223,6 +222,7 @@ function onDeviceReady() {
 	sym = "<span class=\"lifenessinfo\">&#x2B24; </span>";
 	l1 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + sym + obj.type + "</td><td class=\"infotdr\">" + obj.ser + "</td></tr></table>";
 	l2 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + (1*obj.freq).toFixed(3) + " MHz </td><td class=\"infotdr\" style=\”font-size:0.9em;\">" + (0.001*obj.afc).toFixed(2) + " kHz</td></tr></table>";
+	l2 += "<table class=\"infotable\"><tr><td class=\"infotd\">" + ll2str(obj.lat,false) + "</td><td class=\"infotdr\">" + ll2str(obj.lon,true) + " </td></tr></table>";
 	l3 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + obj.alt.toFixed(0) + "m</td><td class=\"infotd\">" + obj.vs + "m/s </td><td class=\"infotdr\">" + (obj.hs*3.6).toFixed(1) + "km/h </td></tr></table>";
 	l4 = "<table class=\"infotable\"><tr><td class=\"infotd\">RSSI: " + -0.5*obj.rssi + " </td><td class=\"infotdr\">" + distance + " </td></tr></table>";
 	this._infoContentL1.innerHTML = l1;
@@ -307,6 +307,40 @@ function onDeviceReady() {
     // just for testing
     update( {res: 0, validId: 1, validPos: 127, id: "A1234567", lat: 48, lon: 13, alt: 10000, vs: 10, hs: 30, rssi: -90, rxStat: "||||||||||||....", type: "RS41", freq: "400.000", afc: "+1.2", ser: "A1234567"} );
     updateMypos(mypos);
+
+    document.addEventListener("pause", onPause);
+    document.addEventListener("resume", onResume);
+    document.addEventListener("backbutton", onBackButton);
+}
+
+function ll2str(l,islon) {
+   var res;
+   if(islon) { res = l<0 ? "W":"E"; }
+   else { res = l<0 ? "S":"N"; }
+   if(l<0) l=-l;
+   return res + l.toFixed(5);
+}
+// so let's try this approach for state management
+// -  "back" button on main screen -> close app (state is lost)? 
+// -  "pause" event with TTGO connected: keep connection and all running in background, create notification entry
+//                  without TTGO connected: stop background thread
+// -  "resume" event: if stopped, start background thread
+function onPause() {
+   console.log("onPause()");
+   if(ttgoStatus.state() == 'offline') {
+     RdzWx.stop();
+   }
+}
+function onResume() {
+   console.log("onResume()");
+   if(ttgoStatus.state() == 'offline') {
+     RdzWx.start("testarg", callBack);
+   }
+}
+function onBackButton() {
+   console.log("onBackButton()");
+   RdzWx.stop();
+   navigator.app.exitApp();
 }
 
 function formatParams(params) {
@@ -408,8 +442,20 @@ function getPrediction(refobj) {
 	    if( refobj.pred  ) { refobj.pred.remove(map); }
             refobj.pred = poly;
 	    if( refobj.land ) { refobj.land.remove(map); }
-	    refobj.land = new L.marker(latlons.slice(-1)[0], {icon: landingIcon});
+	    refobj.land = new L.marker(latlons.slice(-1)[0], {icon: landingIcon,
+              contextmenu: true,
+              contextmenuItems: [{
+	        text: "Zoom to location",
+                callback: function(e) { b=new L.LatLngBounds([refobj.land.getLatLng()]); map.fitBounds(b, {maxZoom: 16}); }
+              }, {
+                separator: true
+              }, {
+                text: "Export to map app",
+                callback: function(e) { ll=refobj.land.getLatLng(); uri="geo:0:0?q="+ll.lat+","+ll.lng+"(X-"+refobj.obj.id+")"; RdzWx.showmap(uri); }
+              }]
+            });
 	    refobj.land.addTo(map);
+
 	    if( refobj.burst ) { refobj.burst.remove(map); }
 	    if( vs>0 ) { // still climbing, so add burst mark
 	       var b = traj0.slice(-1)[0];
@@ -448,15 +494,44 @@ function callBack(arg) {
 }
 
 function updateMypos(obj) {
+  console.log("updateMypos")
+  if(obj.hdop<0) {
+    // GPS fix lost
+    console.log("gps fix lost")
+    if(myposMarker.hdop) myposMarker.hdop = 0
+    if(myposMarker.hdopCircle) {
+      map.removeLayer(myposMarker.hdopCircle)
+      myposMarker.hdopCircle = null
+    }
+    return
+  }
   mypos = obj;
   var pos = [obj.lat, obj.lon]
   if(myposMarker == null) {
     // create marker
-    myposMarker = new L.marker(pos);
+    myposMarker = new L.marker(pos, {
+	contextmenu: true,
+	contextmenuItems: [{
+	    text: "Zoom to location",
+            callback: function(e) { b=new L.LatLngBounds([myposMarker.getLatLng()]); map.fitBounds(b, {maxZoom: 16}); }
+	}]
+    });
     myposMarker.addTo(map);
   } else {
     myposMarker.setLatLng(pos);
     myposMarker.update();
+  }
+  if(myposMarker.hdop) {
+    myposMarker.hdopCircle.setLatLng(pos)
+    if(obj.hdop != myposMarker.hdop) {
+      myposMarker.hdopCircle.setRadius(obj.hdop)
+      myposMarker.hdop = obj.hdop
+    }
+  } else {
+    if(obj.hdop) {
+      myposMarker.hdop = obj.hdop
+      myposMarker.hdopCircle = L.circle(pos, {radius: obj.hdop, dashArray: "2 2" }).addTo(map)
+    }
   }
 }
 
@@ -468,6 +543,7 @@ function periodicStatusCheck() {
 	// handle connection broken (if still connnected)
 	//alert("Closing conn: "+now+" vs "+lastMsgTS);
 	console.log("no data for 5 seconds, closing connection to rdzTTGOsonde");
+	lastMsgTS = 0;
 	RdzWx.closeconn("", function(){});
     }
 }
@@ -534,6 +610,16 @@ function update(obj) {
 	}, {
 	    text: "Remove prediction",
             callback: function(e) { removePrediction(marker); }
+	}, {
+	    separator: true
+	}, {
+	    text: "Zoom to location",
+            callback: function(e) { b=new L.LatLngBounds([[marker.obj.lat, marker.obj.lon]]); map.fitBounds(b, {maxZoom: 16}); }
+	}, {
+	    separator: true
+	}, {
+	    text: "Export to map app",
+            callback: function(e) { uri="geo:0:0?q="+marker.obj.lat+","+marker.obj.lon+"("+marker.obj.id+")"; RdzWx.showmap(uri); }
 	}, {
 	    separator: true
         }, {
