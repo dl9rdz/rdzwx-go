@@ -1,6 +1,8 @@
 # rdzwx-go
 
-Just some simple test code for my first Kotlin code in rdzwx-plugin
+This was just some simple test code for my first Kotlin code in rdzwx-plugin. Its now a mostly usable app, not not really well-tested. Use at your own risk :)
+
+See https://github.com/dl9rdz/rdzwx-go/wiki for details how to use.
 
 ## How to compile and run
 
