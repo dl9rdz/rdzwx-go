@@ -20,6 +20,7 @@
     <allow-navigation href="http://*/*" />
     <allow-navigation href="https://*/*" />
     <allow-navigation href="data:*" />
+    <allow-navigation href="geo:*" />
 
     <platform name="android">
         <allow-intent href="market:*" />
