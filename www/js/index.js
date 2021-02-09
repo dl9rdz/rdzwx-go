@@ -29,7 +29,6 @@ var map = null;
 var lastMarker = null;
 
 var mypos = {lat: 48.56, lon: 13.43, hdop: 25};
-//var mypos = {lat: 48.1, lon: 13.1};
 var myposMarker = null;
 
 var ballonIcon, landIcon, burstIcon;
@@ -50,6 +49,23 @@ var crossMark = "&#x274C;";
       };
    } (L.Map.prototype._initControlPos);
 }(L, this, document));
+
+// Let's add bearing calculation to latLngs...
+L.LatLng.prototype.bearingTo = function(target) {
+    var lat1 = this.lat * Math.PI / 180;
+    var lat2 = target.lat * Math.PI / 180;
+    var dLon = (target.lng-this.lng) * Math.PI / 180;
+    //console.log("b2: "+lat1+", "+lat2+", "+dLon+" -- "+JSON.stringify(target));
+
+    var y    = Math.sin(dLon) * Math.cos(lat2);
+    var x    = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
+
+    var bearing = Math.atan2(y, x) * 180 / Math.PI;
+    bearing = ( parseInt( bearing ) + 360 ) % 360;
+    console.log("bearing : "+x+", "+y+", => "+bearing);
+    return bearing;
+};
+
 
 
 function onDeviceReady() {
@@ -150,7 +166,7 @@ function onDeviceReady() {
         return tawhiriContainer;
       },
       toggle: function() {
-        if(this._contentShown==false) { this._showContent(); } else { this._hideContent(); }
+        if(this._contentShown==false) {  this._showContent();  } else { this._hideContent(); }
       },
       _hideContent: function(ev) {
 	this._tawhiriBody.style.display = 'none';
@@ -205,10 +221,14 @@ function onDeviceReady() {
                         "<table style=\"width:100%;\"><tr><td>403.012 MHz</td><td style=\"float:right; font-size:0.9em;\">+ 1.2 kHz</td></tr></table>",
       		        "12345m &nbsp; 102.4km/h &nbsp; -12.2m/s", "RSSI -90.5  ||||...EEE||||");
 */
+	this._icd = 0;
+	this._layout = 0;
 	return infoContainer;
       },
       toggle: function() {
-	if(this._contentShown == false) { this._showContent(); } else { this._hideContent(); }
+	if(this._contentShown == false) { this._showContent(); }
+	else if (this._layout==0) { this._showCompass(); }
+	else { this._hideContent(); }
       },
       setContent: function(obj) {
         //alert(JSON.stringify(obj));
@@ -221,27 +241,97 @@ function onDeviceReady() {
 	distance = "d=" + distance + "m";
 	sym = "<span class=\"lifenessinfo\">&#x2B24; </span>";
 	l1 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + sym + obj.type + "</td><td class=\"infotdr\">" + obj.ser + "</td></tr></table>";
-	l2 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + (1*obj.freq).toFixed(3) + " MHz </td><td class=\"infotdr\" style=\”font-size:0.9em;\">" + (0.001*obj.afc).toFixed(2) + " kHz</td></tr></table>";
-	l2 += "<table class=\"infotable\"><tr><td class=\"infotd\">" + ll2str(obj.lat,false) + "</td><td class=\"infotdr\">" + ll2str(obj.lon,true) + " </td></tr></table>";
-	l3 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + obj.alt.toFixed(0) + "m</td><td class=\"infotd\">" + obj.vs + "m/s </td><td class=\"infotdr\">" + (obj.hs*3.6).toFixed(1) + "km/h </td></tr></table>";
-	l4 = "<table class=\"infotable\"><tr><td class=\"infotd\">RSSI: " + -0.5*obj.rssi + " </td><td class=\"infotdr\">" + distance + " </td></tr></table>";
+	// normal layout
+	if(this._layout==0) {
+	  l2 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + (1*obj.freq).toFixed(3) + " MHz </td><td class=\"infotdr\" style=\”font-size:0.9em;\">" + (0.001*obj.afc).toFixed(2) + " kHz</td></tr></table>";
+	  l2 += "<table class=\"infotable\"><tr><td class=\"infotd\">" + ll2str(obj.lat,false) + "</td><td class=\"infotdr\">" + ll2str(obj.lon,true) + " </td></tr></table>";
+	  l3 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + obj.alt.toFixed(0) + "m</td><td class=\"infotd\">" + obj.vs + "m/s </td><td class=\"infotdr\">" + (obj.hs*3.6).toFixed(1) + "km/h </td></tr></table>";
+	  l4 = "<table class=\"infotable\"><tr><td class=\"infotd\">RSSI: " + -0.5*obj.rssi + " </td><td class=\"infotdr\">" + distance + " </td></tr></table>";
+	} else {
+	  var b =  L.latLng(mypos).bearingTo(L.latLng(obj));
+	  l2 = '<table class="infotable"><tr><td><svg width="100" height="110">' + 
+	    '<marker id="arrowhead" fill="#f00" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"> ' +
+	    '<polygon points="0 0, 10 3.5, 0 7" />' +
+	    '</marker>' +
+	    ' <circle cx="50" cy="60" r="40" stroke="black" stroke-width="2" fill="#ffe" /> ' +
+   	    '<text x="50" y="14" font-size="smaller" fill="black" dominant-baseline="middle" text-anchor="middle">N</text>' +
+   	    '<rect visible=0 id="imgCompDir" x="46" y="12" width="8" height="16" transform="rotate(' + (this._icd) + ',50,60)"/>' +
+   	    '<line id="imgToSonde" x1="50" y1="60" x2="50" y2="20" stroke="#f00" stroke-width="2" marker-end="url(#arrowhead)" transform="rotate('
+		+ b + ',50,60)" />' +
+   	    '<circle id="imgMoveDir" cx="50" cy="20" r="5" stroke="black" stroke-width="1" fill="lightgray" /> ' +
+	    '</svg>  ';
+	  l2 += '</td><td class="infotd">';
+	  l2 += 'd=' + distance + '<br>';
+  	  l2 += '<span class="infocontentl3">'+ obj.alt.toFixed(0) + "m "+obj.vs+'m/s </span><br>';
+  	  l2 += (obj.hs*3.6).toFixed(1)+'km/h<br>';
+	  l2 += 'RSSI: '+ -0.5*obj.rssi + '</td></tr></table>'
+	  l3 = "";
+	  l4 = "";
+	}
 	this._infoContentL1.innerHTML = l1;
 	this._infoContentL2.innerHTML = l2;
 	this._infoContentL3.innerHTML = l3;
 	this._infoContentL4.innerHTML = l4;
+	this._currentObj = obj;
       },
       setStatus: function(status) {  // 0: rx, 1=to, 2=err, ...
 	 L.DomUtil.setClass(this._infoContentL1, "infocontent infocontentl1 infocontent-status"+status);
       },
       _hideContent: function(ev) {
+	if(this._layout == 1) { this._hideCompass(); }
 	this._infoBody.style.display = 'none';
 	this._infoCloseButton.style.display = 'none';
 	this._contentShown = false;
       },
       _showContent: function(ev) {
+	if(this._layout == 1) { this._hideCompass(); this._layout = 0; }
 	this._infoBody.style.display = '';
 	this._infoCloseButton.style.display = '';
 	this._contentShown = true;
+	this.setContent(this._currentObj);
+      },
+      _hideCompass: function() {
+      	window.removeEventListener("deviceorientationabsolute", this._orientationListener); 
+      },
+      _showCompass: function(ev) {
+	if(this._contentShown && this._layout==1) return;
+        this._layout = 1
+	this._infoBody.style.display = '';
+        this._infoCloseButton.style.display = '';
+        this._contentShown = true;
+	this.setContent(this._currentObj);
+	window.addEventListener("deviceorientationabsolute", this._orientationListener, true);
+      },
+      _orientationListener: function(event) {
+        var icd = document.getElementById("imgCompDir");
+	if(!icd) return;
+	infobox._icd = 360-event.alpha;
+        icd.setAttribute("transform","rotate(" + infobox._icd + ",50,60)");
+      },
+      _updateMypos: function(obj) {
+	this._gpsHeading  = obj.dir;
+	console.log("update GPS dir: "+obj.dir);
+	if(this._contentShown && this._layout==1) {
+	  var imd = document.getElementById("imgMoveDir");
+	  if(!imd) return;
+	  if(this._gpsHeading == 0) {
+	    imd.setAttribute("fill", "lightgray");
+	  } else {
+	    imd.setAttribute("fill", "yellow");
+	    imd.setAttribute("transform", "rotate(" + this._gpsHeading + ",50,60)");
+	  }
+	  if(obj.hdop<0) { // GPS fix lost
+	  } else {
+	    var p0 = L.latLng(myPos);
+	    var p1 = L.latLng(obj);
+	    var b = p0.bearingTo(p1);
+	    var d = p0.distanceTo(p1);
+	    this._icd = b;
+	    var icd = document.getElementById("imgToSonde");
+	    icd.setAttribute("transform", "rotate(" + b + ",50,60)");
+	  }
+	}
+	// TODO: also update distance and direction to target
       },
     });
     infobox = new Infobox();
@@ -272,7 +362,16 @@ function onDeviceReady() {
                },
 	       { stateName: 'online',
                  icon:      '<span style="color: transparent; text-shadow: 0 0 0 #009900; font-size:15pt" class="ttgostatus">' + checkMark + '</span>',
-		 onClick: function(btn, map) { cordova.InAppBrowser.open(btn.ttgourl, '_blank', "location=yes"); }
+	 	 onClick: function(btn, map) { 
+		   var app = cordova.InAppBrowser.open(btn.ttgourl, '_blank', "location=yes,beforeload=yes");
+		   app.addEventListener("loadstart", function(e) {
+			if(e.url.startsWith("geo:")) {
+			    //alert("external: "+e.url);
+			    RdzWx.showmap(e.url);
+			    app.close();
+			}
+		   });
+		 }
 	       }
 	      ],
       position: "topright"
@@ -306,6 +405,12 @@ function onDeviceReady() {
 
     // just for testing
     update( {res: 0, validId: 1, validPos: 127, id: "A1234567", lat: 48, lon: 13, alt: 10000, vs: 10, hs: 30, rssi: -90, rxStat: "||||||||||||....", type: "RS41", freq: "400.000", afc: "+1.2", ser: "A1234567"} );
+    var g = localStorage.getItem('lastgps');
+    if(g) { mypos = JSON.parse( g ); }
+    //TODO: hackish, not elegant
+    mypos.hdop = 25;
+    updateMypos(mypos);
+    mypos.hdop = -1;
     updateMypos(mypos);
 
     document.addEventListener("pause", onPause);
@@ -326,21 +431,26 @@ function ll2str(l,islon) {
 //                  without TTGO connected: stop background thread
 // -  "resume" event: if stopped, start background thread
 function onPause() {
-   console.log("onPause()");
    if(ttgoStatus.state() == 'offline') {
+     console.log("onPause(): TTGO is offline, stopping all activities");
+     window.localStorage.setItem('lastgps', JSON.stringify(mypos));
      RdzWx.stop();
+   } else {
+     console.log("onPause(): TTGO is online, keeping activities running in background");
    }
 }
 function onResume() {
    console.log("onResume()");
-   if(ttgoStatus.state() == 'offline') {
-     RdzWx.start("testarg", callBack);
-   }
+   //if(ttgoStatus.state() == 'offline') {
+   // if already started (not stopped in onPause()), start will do nothign....
+   RdzWx.start("testarg", callBack);
+   //}
 }
 function onBackButton() {
-   console.log("onBackButton()");
+   console.log("onBackButton(): Exit");
+   window.localStorage.setItem('lastgps', JSON.stringify(mypos));
    RdzWx.stop();
-   navigator.app.exitApp();
+   navigator.app.exitApp();  // note: this will also call onPause()
 }
 
 function formatParams(params) {
@@ -487,26 +597,24 @@ function callBack(arg) {
         console.log("callBack: JSON error: "+arg+": "+err.message);
 	return;
     }
-    console.log("callback: "+JSON.stringify(arg));
-    //if(obj.res || obj.msgtype) {
     update(obj);
-    //}
 }
 
 function updateMypos(obj) {
-  console.log("updateMypos")
+  console.log("updateMypos");
+  infobox._updateMypos(obj);
   if(obj.hdop<0) {
     // GPS fix lost
-    console.log("gps fix lost")
-    if(myposMarker.hdop) myposMarker.hdop = 0
+    console.log("gps fix lost");
+    if(myposMarker.hdop) myposMarker.hdop = 0;
     if(myposMarker.hdopCircle) {
-      map.removeLayer(myposMarker.hdopCircle)
-      myposMarker.hdopCircle = null
+      map.removeLayer(myposMarker.hdopCircle);
+      myposMarker.hdopCircle = null;
     }
-    return
+    return;
   }
   mypos = obj;
-  var pos = [obj.lat, obj.lon]
+  var pos = [obj.lat, obj.lon];
   if(myposMarker == null) {
     // create marker
     myposMarker = new L.marker(pos, {
@@ -524,13 +632,13 @@ function updateMypos(obj) {
   if(myposMarker.hdop) {
     myposMarker.hdopCircle.setLatLng(pos)
     if(obj.hdop != myposMarker.hdop) {
-      myposMarker.hdopCircle.setRadius(obj.hdop)
-      myposMarker.hdop = obj.hdop
+      myposMarker.hdopCircle.setRadius(obj.hdop);
+      myposMarker.hdop = obj.hdop;
     }
   } else {
     if(obj.hdop) {
-      myposMarker.hdop = obj.hdop
-      myposMarker.hdopCircle = L.circle(pos, {radius: obj.hdop, dashArray: "2 2" }).addTo(map)
+      myposMarker.hdop = obj.hdop;
+      myposMarker.hdopCircle = L.circle(pos, {radius: obj.hdop, dashArray: "2 2" }).addTo(map);
     }
   }
 }
@@ -554,7 +662,6 @@ function update(obj) {
 	return;
     }
     lastMsgTS = new Date();
-    console.log("update: "+lastMsgTS);
     if(obj.msgtype) {
 	if(obj.msgtype == "ttgostatus") {
 	    ttgoStatus.ttgourl = 'http://' + obj.ip;
@@ -568,83 +675,98 @@ function update(obj) {
     }
 
     // position update
-    if( ((obj.validPos&0x03) != 0x03) || ((obj.validPos&0x80)!=0) ) {   // latitude and longitude are invalid
-       console.log("invalid position, ignoring");
-       return;
-    }
-    console.log("Pos update: "+JSON.stringify(obj));
+    //console.log("Pos update: "+JSON.stringify(obj));
     infobox.setContent(obj);
     infobox.setStatus(obj.res);
-    if( (!obj.validId) || (!obj.validPos) || (obj.res!=0) ) {
+    var isValidPos = true
+    if( ((obj.validPos&0x03) != 0x03) || ((obj.validPos&0x80)!=0) ) {   // latitude and longitude are invalid
+       isValidPos = false
+    }
+    var marker;
+    if( (!obj.validId) || (!isValidPos) || (obj.res!=0) ) {
 	// no valid pos...
 	// res: 1=Timeout, 2=CRC error, 3=unknown, 4=no position
-	console.log("valid: "+(!obj.validId)+" validPos: "+(!obj.validPos)+" res: "+(obj.res!=0));
-        console.log("update with no valid pos");
+	// Check if it is an object marked "old" from TTGO which we do not yet have on the map
+	if( ((obj.validPos&0x3)==0x3) && obj.validId && !markers[obj.id]) {
+          console.log("pos update: Adding old TTGO pos: "+JSON.stringify(obj));
+    	  marker = createNewMarker(obj);
+	  updateMarkerTooltip(marker, obj);
+          markers[obj.id] = marker;
+	} else {
+	  console.log("pos update: No valid update: "+JSON.stringify(obj));
+	}
         return;
     }
-    console.log("Good update!");
+    console.log("pos update: Good update! "+JSON.stringify(obj));
     var pos = new L.LatLng(obj.lat, obj.lon);
-    var marker;
-    var tooltip;
     if(markers[obj.id]) {
       marker = markers[obj.id];
       if(pos.equals(marker.getLatLng())) { console.log("update: position unchanged"); }
       else { marker.path.addLatLng(pos); console.log("update: appending new position"); }
-      tooltip = marker.tt;
       marker.vsavg = 0.9 * marker.vsavg + 0.1 * obj.vs;
     } else {
-      console.log("creating new marker");
-      marker = new L.marker(pos, {icon: ballonIcon,
-	contextmenu: true,
-	contextmenuItems: [{
-/*
-	    text: "Show info",
-	    callback: function(e) { alert("not available yet"); }
-	}, {
-*/
-	    text: "Make prediction",
-	    callback: function(e) { getPrediction(marker); }
-	}, {
-	    text: "Configure prediction",
-	    callback: function(e) { tawhiriCtl.toggle(); }
-	}, {
-	    text: "Remove prediction",
-            callback: function(e) { removePrediction(marker); }
-	}, {
-	    separator: true
-	}, {
-	    text: "Zoom to location",
-            callback: function(e) { b=new L.LatLngBounds([[marker.obj.lat, marker.obj.lon]]); map.fitBounds(b, {maxZoom: 16}); }
-	}, {
-	    separator: true
-	}, {
-	    text: "Export to map app",
-            callback: function(e) { uri="geo:0:0?q="+marker.obj.lat+","+marker.obj.lon+"("+marker.obj.id+")"; RdzWx.showmap(uri); }
-	}, {
-	    separator: true
-        }, {
-	    text: "Delete item",
-            callback: function(e) { removePrediction(marker); map.removeLayer(marker); if(marker==lastMarker) lastMarker=null; }
-	}]
-      });
-      poly = L.polyline(pos, { opacity: 0.5, color: '#3388ff'} );
-      marker.path = poly;
-      //marker.on('clock', function() { showMarkerInfoWindow( obj.id, pos) } );
+      marker = createNewMarker(obj);
       markers[obj.id] = marker;
-      marker.addTo(map);
-      poly.addTo(map);
-      tooltip = L.tooltip({ direction: 'right', permanent: true, className: 'sondeTooltip', offset: [10,-16], interactive: false, opacity: 0.6 });
-      marker.bindTooltip(tooltip);
-      marker.tt = tooltip;
-      marker.vsavg = obj.vs;
     }
     lastMarker = marker;
-    lastMarker.obj = obj;
+    updateMarkerTooltip(marker, obj);
+}
+function updateMarkerTooltip(marker, obj) {
     var tt = '<div class="tooltip-container">' + obj.id + '<div class="text-speed tooltip-container">' + obj.alt + 'm '+ obj.vs +'m/s ' + (obj.hs*3.6).toFixed(1) + 'km/h </div></div>';
-    tooltip.setContent(tt);
-
-    marker.setLatLng(pos);
-    marker.update();  // necessary?
+    marker.tt.setContent(tt);
+    marker.setLatLng( new L.LatLng(obj.lat, obj.lon));
+    marker.obj = obj;
+    marker.update();
+}
+function createNewMarker(obj) {
+  console.log("creating new marker");
+  var pos = new L.LatLng(obj.lat, obj.lon);
+  var marker = new L.marker(pos, {icon: ballonIcon,
+    contextmenu: true,
+    contextmenuItems: [{
+      text: "Make prediction",
+      callback: function(e) { lastMarker = marker; getPrediction(marker); }
+    }, {
+      text: "Configure prediction",
+      callback: function(e) { tawhiriCtl.toggle(); }
+    }, {
+      text: "Remove prediction",
+      callback: function(e) { removePrediction(marker); }
+    }, {
+      separator: true
+    }, {
+      text: "Zoom to location",
+      callback: function(e) { b=new L.LatLngBounds([[marker.obj.lat, marker.obj.lon]]); map.fitBounds(b, {maxZoom: 16}); }
+    }, {
+      separator: true
+    }, {
+      text: "Export to map app",
+      callback: function(e) { uri="geo:0:0?q="+marker.obj.lat+","+marker.obj.lon+"("+marker.obj.id+")"; RdzWx.showmap(uri); }
+    }, {
+      separator: true
+    }, {
+      text: "Delete item",
+      callback: function(e) { deleteMarker(marker); }
+    }]
+  });
+  poly = L.polyline(pos, { opacity: 0.5, color: '#3388ff'} );
+  marker.path = poly;
+  marker.addTo(map);
+  poly.addTo(map);
+  var tooltip = L.tooltip({ direction: 'right', permanent: true, className: 'sondeTooltip', offset: [10,-16], interactive: false, opacity: 0.6 });
+  marker.bindTooltip(tooltip);
+  marker.tt = tooltip;
+  marker.vsavg = obj.vs;
+  marker.obj = obj;
+  return marker;
+}
+function deleteMarker(m) {
+  removePrediction(m);
+  m.unbindTooltip();
+  map.removeLayer(m.path);
+  map.removeLayer(m);
+  if(m==lastMarker) lastMarker=null;
+  delete markers[m.obj.id];
 }
 
 function createButton(label, container) {
