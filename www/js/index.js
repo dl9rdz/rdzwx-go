@@ -38,13 +38,16 @@ var infobox = null;
 var checkMark = "&#x2714;";
 var crossMark = "&#x274C;";
 
-// add "bottom center" to leaflet
+// add "top center" and "bottom center" to leaflet
 (function (L) {
    L.Map.prototype._initControlPos = function(_initControlPos) {
       return function() {
            _initControlPos.apply(this, arguments);  // original function
            this._controlCorners['bottomcenter'] = L.DomUtil.create('div', 'leaflet-bottom leaflet-center',
                L.DomUtil.create('div', 'leaflet-control-bottomcenter', this._controlContainer)
+           );
+           this._controlCorners['topcenter'] = L.DomUtil.create('div', 'leaflet-top leaflet-center',
+               L.DomUtil.create('div', 'leaflet-control-topcenter', this._controlContainer)
            );
       };
    } (L.Map.prototype._initControlPos);
@@ -106,7 +109,7 @@ function onDeviceReady() {
 	"OpenCycleMap": tfcycle,
 	"OpenTopoMap" : opentopo,
 	"Sat": sat,
-	"Hybdir": hybrid
+	"Sat/Hybrid": hybrid
 	<!-- 'Offline': offline -->
     };
 
@@ -158,7 +161,7 @@ function onDeviceReady() {
         tawhiriContent.appendChild(infoContent);
 	this._tawhiriBody = tawhiriBody;
 	this._infoCloseButton = infoCloseButton;
-	//this._showContent();
+	this._hideContent();
 
 	L.DomEvent.disableClickPropagation(tawhiriContainer);
 	L.DomEvent.on(infoCloseButton, 'click', L.DomEvent.stop);
@@ -181,7 +184,7 @@ function onDeviceReady() {
     })
     tawhiriCtl = new TawhiriCtl();
     tawhiriCtl.addTo(map);
-      
+
 
     var Infobox = L.Control.extend({
       options: { position: 'bottomcenter' },
@@ -223,6 +226,8 @@ function onDeviceReady() {
 */
 	this._icd = 0;
 	this._layout = 0;
+	this._gpsHeading = 0;
+	this._gpsHeadingGood = false;
 	return infoContainer;
       },
       toggle: function() {
@@ -236,9 +241,9 @@ function onDeviceReady() {
  	if(obj.type == null) obj.type = "RS41";  // TODO fix in plugin
 	distance = "";
         distance = L.latLng(obj).distanceTo(L.latLng(mypos))
-        if(distance>9999) { distance = distance.toFixed(0); }
-	else { distance = distance.toFixed(1); }
-	distance = "d=" + distance + "m";
+        if(distance>9999) { distance = "d=" + (0.001*distance).toFixed(1) + "km"; }
+	else if (distance>99) { distance = "d=" + distance.toFixed(0) + "m"; }
+	else { distance = "d=" + distance.toFixed(1) + "m"; }
 	sym = "<span class=\"lifenessinfo\">&#x2B24; </span>";
 	l1 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + sym + obj.type + "</td><td class=\"infotdr\">" + obj.ser + "</td></tr></table>";
 	// normal layout
@@ -258,12 +263,12 @@ function onDeviceReady() {
    	    '<rect visible=0 id="imgCompDir" x="46" y="12" width="8" height="16" transform="rotate(' + (this._icd) + ',50,60)"/>' +
    	    '<line id="imgToSonde" x1="50" y1="60" x2="50" y2="20" stroke="#f00" stroke-width="2" marker-end="url(#arrowhead)" transform="rotate('
 		+ b + ',50,60)" />' +
-   	    '<circle id="imgMoveDir" cx="50" cy="20" r="5" stroke="black" stroke-width="1" fill="lightgray" /> ' +
+   	    '<circle id="imgMoveDir" cx="50" cy="20" r="5" stroke="black" stroke-width="1" fill="' + (this._gpsHeadingGood?"yellow":"lightgray") + '" transform="rotate(' + this._gpsHeading + ',50,60)"/> ' +
 	    '</svg>  ';
-	  l2 += '</td><td class="infotd">';
-	  l2 += 'd=' + distance + '<br>';
+	  l2 += '</td><td class="infotd infomax">';
+	  l2 += distance + '<br>';
   	  l2 += '<span class="infocontentl3">'+ obj.alt.toFixed(0) + "m "+obj.vs+'m/s </span><br>';
-  	  l2 += (obj.hs*3.6).toFixed(1)+'km/h<br>';
+  	  l2 += '<span class="infocontentl3">'+ (obj.hs*3.6).toFixed(1)+' km/h</span><br>';
 	  l2 += 'RSSI: '+ -0.5*obj.rssi + '</td></tr></table>'
 	  l3 = "";
 	  l4 = "";
@@ -309,20 +314,21 @@ function onDeviceReady() {
         icd.setAttribute("transform","rotate(" + infobox._icd + ",50,60)");
       },
       _updateMypos: function(obj) {
-	this._gpsHeading  = obj.dir;
+	if(obj.dir>0) { this._gpsHeading = obj.dir; this._gpsHeadingGood = true; } else { this._gpsHeadingGood = false; }
 	console.log("update GPS dir: "+obj.dir);
 	if(this._contentShown && this._layout==1) {
 	  var imd = document.getElementById("imgMoveDir");
 	  if(!imd) return;
-	  if(this._gpsHeading == 0) {
+	  if(this._gpsHeadingGood == false) {
 	    imd.setAttribute("fill", "lightgray");
+	    imd.setAttribute("transform", "rotate(" + this._gpsHeading + ",50,60)");
 	  } else {
 	    imd.setAttribute("fill", "yellow");
 	    imd.setAttribute("transform", "rotate(" + this._gpsHeading + ",50,60)");
 	  }
 	  if(obj.hdop<0) { // GPS fix lost
 	  } else {
-	    var p0 = L.latLng(myPos);
+	    var p0 = L.latLng(mypos);
 	    var p1 = L.latLng(obj);
 	    var b = p0.bearingTo(p1);
 	    var d = p0.distanceTo(p1);
@@ -358,7 +364,7 @@ function onDeviceReady() {
       ttgourl: "http://192.168.42.1",
       states: [{ stateName: 'offline',
                  icon:      '<span class="ttgostatus">' + crossMark + '</span>'
-		 , onClick: function(btn, map) { btn.state('online'); }
+		 , onClick: function(btn, map) { /* just for testing btn.state('online');*/ }
                },
 	       { stateName: 'online',
                  icon:      '<span style="color: transparent; text-shadow: 0 0 0 #009900; font-size:15pt" class="ttgostatus">' + checkMark + '</span>',
@@ -380,6 +386,8 @@ function onDeviceReady() {
    ttgoStatus.addTo(map);
 
 	// '<span class="ttgosttus">&#9989;</span>', )
+    L.control.mousePosition({position: 'bottomleft', emptyString: ''}).addTo(map);
+
 
     ballonIcon = L.icon({
 	  iconUrl: "img/ballon.png",
@@ -407,10 +415,17 @@ function onDeviceReady() {
     update( {res: 0, validId: 1, validPos: 127, id: "A1234567", lat: 48, lon: 13, alt: 10000, vs: 10, hs: 30, rssi: -90, rxStat: "||||||||||||....", type: "RS41", freq: "400.000", afc: "+1.2", ser: "A1234567"} );
     var g = localStorage.getItem('lastgps');
     if(g) { mypos = JSON.parse( g ); }
-    //TODO: hackish, not elegant
-    mypos.hdop = 25;
-    updateMypos(mypos);
     mypos.hdop = -1;
+
+    // create mypos marker
+    myposMarker = new L.marker(mypos, {
+	contextmenu: true,
+	contextmenuItems: [{
+	    text: "Zoom to location",
+            callback: function(e) { b=new L.LatLngBounds([myposMarker.getLatLng()]); map.fitBounds(b, {maxZoom: 16}); }
+	}]
+    });
+    myposMarker.addTo(map);
     updateMypos(mypos);
 
     document.addEventListener("pause", onPause);
@@ -460,7 +475,7 @@ function formatParams(params) {
 }
 
 // borrowed from wetterson.de/karte .....
-function calc_drag(drag,alt){
+function calc_drag(drag,alt,desc){
         if (alt < 1000 ){
             drag = drag * 1;
         } else if (alt < 2000){
@@ -482,7 +497,7 @@ function calc_drag(drag,alt){
             dragfak = (( alt - 10000 )* ( 0.3 - 0.55) / ( 20000 - 10000)) + 0.55;
             drag = drag * dragfak;
         } else { 
-            drag = 5;
+            drag = desc;
         }
         return drag;
 }
@@ -530,7 +545,7 @@ function getPrediction(refobj) {
       tParams["ascent_rate"] = usecurrent ? vs : asc;
       tParams["burst_altitude"] = burst;
     } else {
-      tParams["descent_rate"] = usecurrent ? calc_drag( -vs, refobj.obj.alt ) : desc;
+      tParams["descent_rate"] = usecurrent ? calc_drag( -vs, refobj.obj.alt, desc ) : desc;
     }
     const xhr = new XMLHttpRequest();
     const url = TAWHIRI + formatParams(tParams);
@@ -577,7 +592,7 @@ function getPrediction(refobj) {
 	    var popup = '<div class="pop-header"><img src="img/landing.png"><h4> Landing Point </h4></div>' +
                        '<strong>Time: ' + lastpt.datetime + '</strong><br/>' +
                        '<strong>(' + new Date(lastpt.datetime).toTimeString().split(" (")[0] + ')</strong><br/>' +
-                       '<p> Altitude: ' + lastpt.altitude.toFixed(2) + ' m'+ 
+                       '<p> Altitude: ' + lastpt.altitude.toFixed(1) + ' m'+ 
                        '</br>Asc. Rate: ' + tParams["ascent_rate"].toFixed(2)  + ' m/s'+
                        '</br>Burst: ' + tParams["burst_altitude"]  + ' m'+
                        '</br>Desc. Rate: ' + tParams["descent_rate"].toFixed(2) + ' m/s</p>' +
@@ -615,20 +630,8 @@ function updateMypos(obj) {
   }
   mypos = obj;
   var pos = [obj.lat, obj.lon];
-  if(myposMarker == null) {
-    // create marker
-    myposMarker = new L.marker(pos, {
-	contextmenu: true,
-	contextmenuItems: [{
-	    text: "Zoom to location",
-            callback: function(e) { b=new L.LatLngBounds([myposMarker.getLatLng()]); map.fitBounds(b, {maxZoom: 16}); }
-	}]
-    });
-    myposMarker.addTo(map);
-  } else {
-    myposMarker.setLatLng(pos);
-    myposMarker.update();
-  }
+  myposMarker.setLatLng(pos);
+  myposMarker.update();
   if(myposMarker.hdop) {
     myposMarker.hdopCircle.setLatLng(pos)
     if(obj.hdop != myposMarker.hdop) {
@@ -637,8 +640,8 @@ function updateMypos(obj) {
     }
   } else {
     if(obj.hdop) {
-      myposMarker.hdop = obj.hdop;
       myposMarker.hdopCircle = L.circle(pos, {radius: obj.hdop, dashArray: "2 2" }).addTo(map);
+      myposMarker.hdop = obj.hdop;
     }
   }
 }
@@ -647,10 +650,10 @@ var lastMsgTS = 0;
 
 function periodicStatusCheck() {
     now = new Date();
-    if( lastMsgTS && (now-lastMsgTS) > 5000 ) {
+    if( lastMsgTS && (now-lastMsgTS) > 10000 ) {
 	// handle connection broken (if still connnected)
 	//alert("Closing conn: "+now+" vs "+lastMsgTS);
-	console.log("no data for 5 seconds, closing connection to rdzTTGOsonde");
+	console.log("no data for 10 seconds, closing connection to rdzTTGOsonde");
 	lastMsgTS = 0;
 	RdzWx.closeconn("", function(){});
     }
@@ -666,6 +669,7 @@ function update(obj) {
 	if(obj.msgtype == "ttgostatus") {
 	    ttgoStatus.ttgourl = 'http://' + obj.ip;
 	    ttgoStatus.state(obj.state)
+	    if(obj.state=="offline") { infobox.setStatus(1); }
         }
 	if(obj.msgtype == "gps") {
 	    updateMypos(obj);
@@ -676,6 +680,7 @@ function update(obj) {
 
     // position update
     //console.log("Pos update: "+JSON.stringify(obj));
+    if(obj.egmdiff && obj.alt) { obj.alt -= obj.egmdiff; }
     infobox.setContent(obj);
     infobox.setStatus(obj.res);
     var isValidPos = true
@@ -692,6 +697,7 @@ function update(obj) {
     	  marker = createNewMarker(obj);
 	  updateMarkerTooltip(marker, obj);
           markers[obj.id] = marker;
+	  lastMarker = marker
 	} else {
 	  console.log("pos update: No valid update: "+JSON.stringify(obj));
 	}
@@ -712,7 +718,7 @@ function update(obj) {
     updateMarkerTooltip(marker, obj);
 }
 function updateMarkerTooltip(marker, obj) {
-    var tt = '<div class="tooltip-container">' + obj.id + '<div class="text-speed tooltip-container">' + obj.alt + 'm '+ obj.vs +'m/s ' + (obj.hs*3.6).toFixed(1) + 'km/h </div></div>';
+    var tt = '<div class="tooltip-container">' + obj.id + '<div class="text-speed tooltip-container">' + obj.alt.toFixed(1) + 'm '+ obj.vs +'m/s ' + (obj.hs*3.6).toFixed(1) + 'km/h </div></div>';
     marker.tt.setContent(tt);
     marker.setLatLng( new L.LatLng(obj.lat, obj.lon));
     marker.obj = obj;

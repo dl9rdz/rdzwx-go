@@ -106,6 +106,9 @@ html, body {
   padding: 0px;
   float: right;
 }
+.infomax {
+  width: 99%;
+}
 
 .tawhiridiv {
   background-color:  #ecfedf;
@@ -166,7 +169,7 @@ html, body {
   font-size: 5vw;
 }
 .infocontentl3 {
-  font-size: 6vw;
+  font-size: 5.5vw;
 }
 .infocontentl4 {
   font-size: 5vw;
@@ -245,6 +248,13 @@ html, body {
   right: 0;
 }
 
+.leaflet-control-container .leaflet-control-topcenter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
 
 /* Portrait layout (default) */
 .app {
@@ -316,4 +326,13 @@ h1 {
     body {
         background-image:linear-gradient(to bottom, #585858 0%, #1B1B1B 51%);
     }
+}
+
+.leaflet-container .leaflet-control-mouseposition {
+  background-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 5px #bbb;
+  padding: 0 2px;
+  margin:0;
+  color: #333;
+  font: 11px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
 }
