@@ -76,6 +76,22 @@ function onDeviceReady() {
 
     console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
 
+    // Check for updates
+    fetch("https://raw.githubusercontent.com/dl9rdz/rdzwx-go/main/version.json")
+    .then(response => response.json())
+    .then(data => {
+      console.log('Success:', data);
+          if(data.version > "1.0.4") {
+             if(window.confirm("New version "+ data.version + " available! Download?")) {
+		console.log("opening "+data.url);
+		cordova.InAppBrowser.open(data.url, "_system");
+	     }
+	  }
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+
     // Some map tile sources
     var tfapikey = "01be52efbdc14d38beac233a870c8d4f";
     var tfland = L.tileLayer('https://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=' + tfapikey, {attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'}),
@@ -328,16 +344,17 @@ function onDeviceReady() {
 	  }
 	  if(obj.hdop<0) { // GPS fix lost
 	  } else {
-	    var p0 = L.latLng(mypos);
-	    var p1 = L.latLng(obj);
+	    var p0 = L.latLng(obj);
+	    var p1 = L.latLng(_currentObj);
 	    var b = p0.bearingTo(p1);
 	    var d = p0.distanceTo(p1);
 	    this._icd = b;
+	    //console.log("mypos "+p0+" and sondepos "+p1+": bearing: "+b+", distance: "+d);
 	    var icd = document.getElementById("imgToSonde");
 	    icd.setAttribute("transform", "rotate(" + b + ",50,60)");
+	    // TODO: also update distance to target
 	  }
 	}
-	// TODO: also update distance and direction to target
       },
     });
     infobox = new Infobox();
@@ -412,7 +429,7 @@ function onDeviceReady() {
     setInterval(periodicStatusCheck, 1000);
 
     // just for testing
-    update( {res: 0, validId: 1, validPos: 127, id: "A1234567", lat: 48, lon: 13, alt: 10000, vs: 10, hs: 30, rssi: -90, rxStat: "||||||||||||....", type: "RS41", freq: "400.000", afc: "+1.2", ser: "A1234567"} );
+    update( {res: 0, validId: 1, validPos: 127, id: "A1234567", lat: 48.8621, lon: 12.064, alt: 20744, vs: 4.8, hs: 11.0, rssi: -90, rxStat: "||||||||||||....", type: "RS41", freq: "400.000", afc: "+1.2", ser: "A1234567"} );
     var g = localStorage.getItem('lastgps');
     if(g) { mypos = JSON.parse( g ); }
     mypos.hdop = -1;
@@ -449,7 +466,7 @@ function onPause() {
    if(ttgoStatus.state() == 'offline') {
      console.log("onPause(): TTGO is offline, stopping all activities");
      window.localStorage.setItem('lastgps', JSON.stringify(mypos));
-     RdzWx.stop();
+     RdzWx.stop(function(){});
    } else {
      console.log("onPause(): TTGO is online, keeping activities running in background");
    }
@@ -464,7 +481,7 @@ function onResume() {
 function onBackButton() {
    console.log("onBackButton(): Exit");
    window.localStorage.setItem('lastgps', JSON.stringify(mypos));
-   RdzWx.stop();
+   RdzWx.stop(function(){});
    navigator.app.exitApp();  // note: this will also call onPause()
 }
 
@@ -543,7 +560,7 @@ function getPrediction(refobj) {
     if(vs > 0) {
 	// still climbing up
       tParams["ascent_rate"] = usecurrent ? vs : asc;
-      tParams["burst_altitude"] = burst;
+      if(burst > refobj.obj.alt+2) { tParams["burst_altitude"] = burst; }
     } else {
       tParams["descent_rate"] = usecurrent ? calc_drag( -vs, refobj.obj.alt, desc ) : desc;
     }
@@ -607,6 +624,7 @@ function getPrediction(refobj) {
 function callBack(arg) {
     var obj;
     try {
+	console.log("callback: "+arg);
         obj = JSON.parse(arg);
     } catch(err) {
         console.log("callBack: JSON error: "+arg+": "+err.message);
@@ -683,9 +701,9 @@ function update(obj) {
     if(obj.egmdiff && obj.alt) { obj.alt -= obj.egmdiff; }
     infobox.setContent(obj);
     infobox.setStatus(obj.res);
-    var isValidPos = true
+    var isValidPos = true;
     if( ((obj.validPos&0x03) != 0x03) || ((obj.validPos&0x80)!=0) ) {   // latitude and longitude are invalid
-       isValidPos = false
+       isValidPos = false;
     }
     var marker;
     if( (!obj.validId) || (!isValidPos) || (obj.res!=0) ) {
