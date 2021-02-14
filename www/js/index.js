@@ -28,7 +28,7 @@ var map = null;
 /////var lastObj = { obj: null, marker: null, /*no longer used: */pred: null, land: null };
 var lastMarker = null;
 
-var mypos = {lat: 48.56, lon: 13.43, hdop: 25};
+var mypos = {lat: 48.56, lon: 13.43, hdop: 25, alt: 480};
 var myposMarker = null;
 
 var ballonIcon, landIcon, burstIcon;
@@ -380,17 +380,19 @@ function onDeviceReady() {
     ttgoStatus = L.easyButton( {
       ttgourl: "http://192.168.42.1",
       states: [{ stateName: 'offline',
-                 icon:      '<span class="ttgostatus">' + crossMark + '</span>'
+                 //icon:      '<span class="ttgostatus">' + crossMark + '</span>'
+	 	 icon:      '<img width=24 height=24 src="img/ttgooff.png"/>'
 		 , onClick: function(btn, map) { /* just for testing btn.state('online');*/ }
                },
 	       { stateName: 'online',
-                 icon:      '<span style="color: transparent; text-shadow: 0 0 0 #009900; font-size:15pt" class="ttgostatus">' + checkMark + '</span>',
+	 	 //icon:      '<span style="color: transparent; text-shadow: 0 0 0 #009900; font-size:15pt" class="ttgostatus">' + checkMark + '</span>',
+                 icon:      '<img width=24 height=24 src="img/ttgoon.png"/>',
 	 	 onClick: function(btn, map) { 
 		   var app = cordova.InAppBrowser.open(btn.ttgourl, '_blank', "location=yes,beforeload=yes");
 		   app.addEventListener("loadstart", function(e) {
 			if(e.url.startsWith("geo:")) {
 			    //alert("external: "+e.url);
-			    RdzWx.showmap(e.url);
+			    RdzWx.showmap(e.url, function(){});
 			    app.close();
 			}
 		   });
@@ -402,7 +404,6 @@ function onDeviceReady() {
    ttgoStatus.state('offline');
    ttgoStatus.addTo(map);
 
-	// '<span class="ttgosttus">&#9989;</span>', )
     L.control.mousePosition({position: 'bottomleft', emptyString: ''}).addTo(map);
 
 
@@ -444,6 +445,15 @@ function onDeviceReady() {
     });
     myposMarker.addTo(map);
     updateMypos(mypos);
+    myposMarker.bindPopup( function(lay) {
+       var alt = lay.getLatLng().alt;
+       if(!alt) alt = 0;
+       return  '<div class="pop-header"><img src="css/images/marker-icon.png"/><h4> Current position </h4></div>' +
+	       '<p>Lat: ' + lay.getLatLng().lat.toFixed(5) + '<br>' +
+       	       'Lon: ' + lay.getLatLng().lng.toFixed(5) + '<br>' +
+	       'Altutide: ' + alt + '</p>' +
+	       '<p>HDOP: ' + (lay.hdop>0 ? lay.hdop : 'no GPS fix') + '</p>';
+    });
 
     document.addEventListener("pause", onPause);
     document.addEventListener("resume", onResume);
@@ -466,7 +476,7 @@ function onPause() {
    if(ttgoStatus.state() == 'offline') {
      console.log("onPause(): TTGO is offline, stopping all activities");
      window.localStorage.setItem('lastgps', JSON.stringify(mypos));
-     RdzWx.stop(function(){});
+     RdzWx.stop("", function(){});
    } else {
      console.log("onPause(): TTGO is online, keeping activities running in background");
    }
@@ -481,7 +491,7 @@ function onResume() {
 function onBackButton() {
    console.log("onBackButton(): Exit");
    window.localStorage.setItem('lastgps', JSON.stringify(mypos));
-   RdzWx.stop(function(){});
+   RdzWx.stop("", function(){});
    navigator.app.exitApp();  // note: this will also call onPause()
 }
 
@@ -545,11 +555,11 @@ function getPrediction(refobj) {
     var tParams = {
         "launch_latitude": refobj.obj.lat,
         "launch_longitude": refobj.obj.lon,
-        "launch_altitude": refobj.obj.alt,
+        "launch_altitude": refobj.obj.alt.toFixed(1),
         "launch_datetime": new Date().toISOString().split('.')[0] + 'Z',
         "ascent_rate": asc,
         "descent_rate": desc,
-        "burst_altitude": refobj.obj.alt+2,
+        "burst_altitude": (refobj.obj.alt+2).toFixed(1),
         "profile": "standard_profile",
     }
     var vs = refobj.obj.vs;
@@ -593,7 +603,7 @@ function getPrediction(refobj) {
                 separator: true
               }, {
                 text: "Export to map app",
-                callback: function(e) { ll=refobj.land.getLatLng(); uri="geo:0:0?q="+ll.lat+","+ll.lng+"(X-"+refobj.obj.id+")"; RdzWx.showmap(uri); }
+                callback: function(e) { ll=refobj.land.getLatLng(); uri="geo:0:0?q="+ll.lat+","+ll.lng+"(X-"+refobj.obj.id+")"; RdzWx.showmap(uri, function(){}); }
               }]
             });
 	    refobj.land.addTo(map);
@@ -647,7 +657,7 @@ function updateMypos(obj) {
     return;
   }
   mypos = obj;
-  var pos = [obj.lat, obj.lon];
+  var pos = [obj.lat, obj.lon, obj.alt];
   myposMarker.setLatLng(pos);
   myposMarker.update();
   if(myposMarker.hdop) {
@@ -740,6 +750,7 @@ function updateMarkerTooltip(marker, obj) {
     marker.tt.setContent(tt);
     marker.setLatLng( new L.LatLng(obj.lat, obj.lon));
     marker.obj = obj;
+    marker.getPopup().update();
     marker.update();
 }
 function createNewMarker(obj) {
@@ -765,7 +776,7 @@ function createNewMarker(obj) {
       separator: true
     }, {
       text: "Export to map app",
-      callback: function(e) { uri="geo:0:0?q="+marker.obj.lat+","+marker.obj.lon+"("+marker.obj.id+")"; RdzWx.showmap(uri); }
+      callback: function(e) { uri="geo:0:0?q="+marker.obj.lat+","+marker.obj.lon+"("+marker.obj.id+")"; RdzWx.showmap(uri, function(){}); }
     }, {
       separator: true
     }, {
@@ -777,13 +788,34 @@ function createNewMarker(obj) {
   marker.path = poly;
   marker.addTo(map);
   poly.addTo(map);
-  var tooltip = L.tooltip({ direction: 'right', permanent: true, className: 'sondeTooltip', offset: [10,-16], interactive: false, opacity: 0.6 });
+  var tooltip = L.tooltip({ direction: 'right', permanent: true, className: 'sondeTooltip', offset: [10,-16], interactive: true, opacity: 0.6 });
+
   marker.bindTooltip(tooltip);
   marker.tt = tooltip;
   marker.vsavg = obj.vs;
   marker.obj = obj;
+
+  marker.bindPopup( function(lay) {
+    var alt = lay.getLatLng().alt;
+    if(!alt) alt = 0;
+    return  '<div class="pop-header"><img src="img/ballon.png"/><h4> ' + lay.obj.id + '</h4></div>' +
+      '<p>Serial: '+ lay.obj.ser + '<br>' +
+      ''+(new Date(1000*lay.obj.time)).toString().split(" (")[0] + '<br/>' +
+      '(' + formathms( new Date().valueOf() / 1000 - lay.obj.time ) + ' ago) <br/>' +
+      'Frame #'+lay.obj.frame+', Sats='+lay.obj.sats + '<br/>' +
+      'burstKT='+formathms(lay.obj.burstKT)+'<br>launchKT='+formathms(lay.obj.launchKT)+'<br>countdown='+formathms(lay.obj.countKT+lay.obj.crefKT-lay.obj.frame)+'<br/>' +
+      '</p>';
+ });
+
   return marker;
 }
+function formathms(ts) {
+  if(typeof ts === "undefined") { return "<undef>"; }
+  var h = Math.floor(ts/3600); ts-=h*3600;
+  var m = Math.floor(ts/60); ts=Math.floor(ts-m*60);
+  return ("0"+h).slice(-2) + ":" + ("0"+m).slice(-2) + ":" + ("0"+ts).slice(-2);
+}
+
 function deleteMarker(m) {
   removePrediction(m);
   m.unbindTooltip();

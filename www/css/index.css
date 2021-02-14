@@ -220,11 +220,18 @@ html, body {
 .pop-header {
     display: flex;
     align-items:center;
+    margin: 4px;
+}
+.pop-header > h4{
+    margin: 4px;
 }
 .pop-header > img{
         display: inline-block;
         height: 16px;
 
+}
+.leaflet-popup-content {
+    margin: 6px 12px;
 }
 
 .leaflet-center {
@@ -335,4 +342,13 @@ h1 {
   margin:0;
   color: #333;
   font: 11px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+.online-active, .offline-active {
+padding-left: 0px;
+padding-right: 0px;
+}
+
+button.offline-active, button.online-active {
+padding-top: 4px;
 }
