@@ -81,7 +81,7 @@ function onDeviceReady() {
     .then(response => response.json())
     .then(data => {
       console.log('Success:', data);
-          if(data.version > "1.0.4") {
+          if(data.version > "1.0.5") {
              if(window.confirm("New version "+ data.version + " available! Download?")) {
 		console.log("opening "+data.url);
 		cordova.InAppBrowser.open(data.url, "_system");
@@ -589,7 +589,7 @@ function getPrediction(refobj) {
 	    traj0.forEach( p => latlons.push( [p.latitude, p.longitude] ) );
 	    traj1.forEach( p => latlons.push( [p.latitude, p.longitude] ) );
 	    //alert("path: "+JSON.stringify(traj));
-      	    poly = L.polyline(latlons, { opacity: 0.5, color: '#EE0000', dashArray: '8, 6'} );
+      	    poly = L.polyline(latlons, { opacity: 0.7, color: '#EE0000', dashArray: '8, 6'} );
             poly.addTo(map);
 	    if( refobj.pred  ) { refobj.pred.remove(map); }
             refobj.pred = poly;
@@ -784,7 +784,7 @@ function createNewMarker(obj) {
       callback: function(e) { deleteMarker(marker); }
     }]
   });
-  poly = L.polyline(pos, { opacity: 0.5, color: '#3388ff'} );
+  poly = L.polyline(pos, { opacity: 0.8, color: '#3388ff'} );
   marker.path = poly;
   marker.addTo(map);
   poly.addTo(map);
