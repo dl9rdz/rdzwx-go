@@ -345,7 +345,7 @@ function onDeviceReady() {
 	  if(obj.hdop<0) { // GPS fix lost
 	  } else {
 	    var p0 = L.latLng(obj);
-	    var p1 = L.latLng(_currentObj);
+	    var p1 = L.latLng(this._currentObj);
 	    var b = p0.bearingTo(p1);
 	    var d = p0.distanceTo(p1);
 	    this._icd = b;
