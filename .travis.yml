@@ -29,8 +29,9 @@ before_script:
  # - android-wait-for-emulator
  # - adb shell input keyevent 82 &
  # - curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-  - sudp apt-get update
+  - sudo apt-get update
   - sudo apt-get install nodejs
+  - sudo apt-get install npm
   - npm install -g cordova
   - cordova platfrom add android
 
