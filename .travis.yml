@@ -28,7 +28,7 @@ before_script:
  # - emulator -avd test -no-audio -no-window &
  # - android-wait-for-emulator
  # - adb shell input keyevent 82 &
-  - apt install nodejs
+  - sudo apt install nodejs
   - npm install -g cordova
   - cordova platfrom add android
 
