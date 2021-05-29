@@ -1,12 +1,11 @@
-
-os:
-  - osx
-  - android
-
+os: linux
+language: android
+dist: bionic
 
 jobs:
   include:
     - language: android
+      os: linux
       dist: bionic
       jdk: oraclejdk8
       android:
@@ -17,9 +16,9 @@ jobs:
       before_script:
         - echo "Before"
         - apt install nodejs
-	- npm install -g cordova
-	- cordova platfrom add android
-	- cordova build
+        - npm install -g cordova
+        - cordova platfrom add android
+        - cordova build
       script:
         - echo "script"
 
@@ -32,5 +31,4 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "android" ]; then
       echo "TEST Android"
     fi
-  - 
-    
+
