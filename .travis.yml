@@ -7,7 +7,6 @@ jobs:
     - language: android
       os: linux
       dist: bionic
-      jdk: oraclejdk8
       android:
         components:
           - tools
