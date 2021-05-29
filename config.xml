@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="de.dl9rdz" version="1.0.5" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0"
+<widget id="de.dl9rdz" version="1.0.6" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0"
     xmlns:android="schemas.android.com/apk/res/android">
-    <name>rdzSondyGO</name>
+    <name>rdzSonde</name>
     <description>
         A sample Apache Cordova application that uses rdzwx-plugin.
     </description>
@@ -29,7 +29,10 @@
           <application android:usesCleartextTraffic="true" />
         </edit-config>
     </platform>
-    <icon src="res/icon.png"/>
+    <icon src="res/icon512.png"/>
+    <platform name="electron">
+      <preference name="ElectronSettingsFilePath" value="res/electron/settings.json" />
+    </platform>
 
     <preference name="GradlePluginKotlinEnabled" value="true" />
     <preference name="GradlePluginKotlinCodeStyle" value="official" />

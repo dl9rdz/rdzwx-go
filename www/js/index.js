@@ -831,3 +831,16 @@ function createButton(label, container) {
   btn.innerHTML = label;
   return btn;
 }
+
+// radiosondy.info
+function reqauth() {
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "https://radiosondy.info/user/login.php?", true);
+  xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+  xhr.onreadystatechange = function() {
+    if(http.readyState == 4 && http.satus == 200) {
+      alert(http.resonseText);
+    }
+  }
+  xhr.send('submitted=1&username=DL9RDZ&password=ct1jzmhr&Submit=Login');
+}
