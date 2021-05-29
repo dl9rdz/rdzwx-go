@@ -1,33 +1,50 @@
-os: linux
+sudo: required
 language: android
-dist: bionic
+jdk: oraclejdk8
+dist: trusty
 
-jobs:
-  include:
-    - language: android
-      os: linux
-      dist: bionic
-      android:
-        components:
-          - tools
-          - android-29
-          - build-tools-29.0.3
-      before_script:
-        - echo "Before"
-        - apt install nodejs
-        - npm install -g cordova
-        - cordova platfrom add android
-        - cordova build
-      script:
-        - echo "script"
-
-
-
+android:
+  licenses:
+    - 'android-sdk-preview-license-.+'
+    - 'android-sdk-license-.+'
+    - 'google-gdk-license-.+'
+ 
+  components:
+    - tools
+    - build-tools-30.0.2
+    - android-30
+    - android-22
+    - extra-google-google_play_services
+    - extra-google-m2repository
+    - extra-android-m2repository
+    - sys-img-armeabi-v7a-android-22
+ 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then
-      echo "TEST OSX";
-    fi
-  - if [ "$TRAVIS_OS_NAME" = "android" ]; then
-      echo "TEST Android"
-    fi
+  - chmod +x gradlew
+  - yes | sdkmanager "platforms;android-30"
+
+before_script:
+  - echo no | android create avd --force -n test -t android-22 --abi armeabi-v7a
+  - emulator -avd test -no-audio -no-window &
+  - android-wait-for-emulator
+  - adb shell input keyevent 82 &
+  - apt install nodejs
+  - npm install -g cordova
+  - cordova platfrom add android
+
+script:
+  - cordova build
+  #- ./gradlew clean build
+  #- ./gradlew test
+  #- ./gradlew build check
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+  directories:
+  - $HOME/.gradle/caches/
+  - $HOME/.gradle/wrapper/
+  - $HOME/.android/build-cache
 
