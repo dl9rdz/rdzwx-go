@@ -42,6 +42,7 @@ before_script:
   - sudo apt-get install nodejs
   - sudo apt-get install npm
   - sudo apt-get install openjdk-11-jdk
+  - sudo apt-get install gradle
   - wget -nv https://dl.google.com/android/repository/$ANDROID_SDK_TOOLS
   - unzip -q $ANDROID_SDK_TOOLS -d $HOME/sdk
   - mv $HOME/sdk/cmdline-tools $HOME/sdk/latest
@@ -54,15 +55,23 @@ before_script:
   - yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
   - yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "build-tools;29.0.3"
   # not nice but well.. 
-  - npm config set strict-ssl false
+  #- npm config set strict-ssl false
   - sudo npm install -g cordova
   - sudo chown -R 2000:2000 "/home/travis/.npm"
+  - perl -pi -e 's/1\.8\.x/11.x/' node_modules/cordova-android/bin//templates/cordova/lib/check_reqs.js
   - cordova platform add android
 
 script:
   - cordova build
+  - mv platforms/android/app/build/outputs/apk/debug/app-debug.apk rdzSonde-${TRAVIS_TAG}.apk
   #- ./gradlew clean build
   #- ./gradlew test
   #- ./gradlew build check
 
 
+deploy:
+  provider: releases
+  api-key: ${GITHUB_API_KEY}
+  file: rdzSonde-${TRAVIS_TAG}.apk
+  on:
+    tags: true
