@@ -62,7 +62,7 @@ before_script:
   - perl -pi -e 's/1\.8\.x/11.x/' ./platforms/android/cordova/lib/check_reqs.js
 
 script:
-  - cordova build
+  - cordova build --release
   - export BUILD_TOOLS=$HOME/sdk/build-tools/29.0.3
   - ${BUILD_TOOLS}/zipalign -v -p 4 platforms/android/app/build/outputs/apk/debug/app-release-unsigned.apk rdzSonde-unsigned.apk
   - echo $supersecret | gpg --passphrase-fd 0 my-release-key.jks.gpg
