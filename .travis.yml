@@ -1,27 +1,35 @@
+language: minimal
 os: linux
-dist: xenial
-language: android
-jdk: oraclejdk8
+dist: focal
+group: edge
 
-android:
-  licenses:
-    - 'android-sdk-preview-license-.+'
-    - 'android-sdk-license-.+'
-    - 'google-gdk-license-.+'
+env:
+  global:
+  # for updates check developer.android.com/studio#downloads (current 26.1.1)
+  - ANDROID_SDK_TOOLS=commandlinetools-linux-7302050_latest.zip
+
+#language: android
+#jdk: oraclejdk8
+#
+#android:
+#  licenses:
+#    - 'android-sdk-preview-license-.+'
+#    - 'android-sdk-license-.+'
+#    - 'google-gdk-license-.+'
+# 
+#  components:
+#    - tools
+#    - build-tools-30.0.2
+#    - android-30
+#    #- android-22
+#    #- extra-google-google_play_services
+#    #- extra-google-m2repository
+#    #- extra-android-m2repository
+#    #- sys-img-armeabi-v7a-android-22
  
-  components:
-    - tools
-    - build-tools-30.0.2
-    - android-30
-    #- android-22
-    #- extra-google-google_play_services
-    #- extra-google-m2repository
-    #- extra-android-m2repository
-    #- sys-img-armeabi-v7a-android-22
- 
-before_install:
-  #- chmod +x gradlew
-  - yes | sdkmanager "platforms;android-30"
+#before_install:
+#  #- chmod +x gradlew
+#  - yes | sdkmanager "platforms;android-30"
 
 before_script:
  #- echo no | android create avd --force -n test -t android-22 --abi armeabi-v7a
@@ -32,6 +40,15 @@ before_script:
   - sudo apt-get update
   - sudo apt-get install nodejs
   - sudo apt-get install npm
+  - sudo apt-get install openjdk-11-jdk
+  - wget -nv https://dl.google.com/android/repository/$ANDROID_SDK_TOOLS
+  - unzip -q $ANDROID_SDK_TOOLS -d $HOME/sdk
+  - export PATH=$PATH:$HOME/sdk/cmdline-tools/bin
+  - export ANDROID_HOME=$HOME/sdk
+  - yes | sdkmanager "platforms;android-29"
+  - yes | sdkmanager "emulator" "tools" "platform-tools"
+  - yes | sdkmanager --licenses
+  - yes | sdkmanager "build-tools;29.0.3"
   # not nice but well.. 
   - npm config set strict-ssl false
   - sudo npm install -g cordova
