@@ -46,7 +46,7 @@ before_script:
   - mv $HOME/sdk/cmdline-tools $HOME/sdk/latest
   - mkdir $HOME/sdk/cmdline-tools
   - mv $HOME/sdk/latest $HOME/sdk/cmdline-tools/
-  - export PATH=$PATH:$HOME/sdk/cmdline-tools/bin
+  - export PATH=$PATH:$HOME/sdk/cmdline-tools/latest/bin
   - export ANDROID_SDK_ROOT=$HOME/sdk
   - yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-29"
   - yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "emulator" "tools" "platform-tools"
