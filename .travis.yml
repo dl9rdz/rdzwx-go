@@ -44,7 +44,7 @@ before_script:
   - wget -nv https://dl.google.com/android/repository/$ANDROID_SDK_TOOLS
   - unzip -q $ANDROID_SDK_TOOLS -d $HOME/sdk
   - export PATH=$PATH:$HOME/sdk/cmdline-tools/bin
-  - export ANDROID_SDR_ROOT=$HOME/sdk
+  - export ANDROID_SDK_ROOT=$HOME/sdk
   - yes | sdkmanager "platforms;android-29"
   - yes | sdkmanager "emulator" "tools" "platform-tools"
   - yes | sdkmanager --licenses
