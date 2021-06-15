@@ -54,7 +54,7 @@ before_script:
   - yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "build-tools;29.0.3"
   # not nice but well.. 
   - npm config set strict-ssl false
-  - sudo npm install -g cordova
+  - npm install -g cordova
   - cordova platform add android
 
 script:
