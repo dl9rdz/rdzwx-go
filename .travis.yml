@@ -55,7 +55,7 @@ before_script:
   # not nice but well.. 
   - npm config set strict-ssl false
   - sudo npm install -g cordova
-  - cordova platfrom add android
+  - cordova platform add android
 
 script:
   - cordova build
