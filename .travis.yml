@@ -43,8 +43,9 @@ before_script:
   - sudo apt-get install openjdk-11-jdk
   - wget -nv https://dl.google.com/android/repository/$ANDROID_SDK_TOOLS
   - unzip -q $ANDROID_SDK_TOOLS -d $HOME/sdk
-  - mkdir $HOME/sdk/cmdline-tools/latest
-  - mv $HOME/sdk/cmdline-tools/* $HOME/sdk/cmdline-tools/latest/
+  - mv $HOME/sdk/cmdline-tools $HOME/sdk/latest
+  - mkdir $HOME/sdk/cmdline-tools
+  - mv $HOME/sdk/latest $HOME/sdk/cmdline-tools/
   - export PATH=$PATH:$HOME/sdk/cmdline-tools/bin
   - export ANDROID_SDK_ROOT=$HOME/sdk
   - yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-29"
