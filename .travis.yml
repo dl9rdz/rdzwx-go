@@ -58,8 +58,8 @@ before_script:
   #- npm config set strict-ssl false
   - sudo npm install -g cordova
   - sudo chown -R 2000:2000 "/home/travis/.npm"
-  - perl -pi -e 's/1\.8\.x/11.x/' node_modules/cordova-android/bin//templates/cordova/lib/check_reqs.js
   - cordova platform add android
+  - perl -pi -e 's/1\.8\.x/11.x/' node_modules/cordova-android/bin//templates/cordova/lib/check_reqs.js
 
 script:
   - cordova build
