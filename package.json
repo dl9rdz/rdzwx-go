@@ -21,7 +21,7 @@
     "cordova-plugin-inappbrowser": "^4.1.0",
     "cordova-plugin-local-notification": "^0.9.0-beta.2",
     "cordova-plugin-whitelist": "^1.3.4",
-    "rdzwx-plugin": "file:../../AndroidStudioProjects/rdzwx-plugin"
+    "de-dl9rdz-rdzwx": "https://github.com/dl9rdz/rdzwx-plugin.git"
   },
   "cordova": {
     "plugins": {
