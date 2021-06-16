@@ -11,10 +11,13 @@
 	if (typeof define === 'function' && define.amd) {
 		// AMD
 		define(['leaflet'], factory);
+/*
+// not working well with Cordova/electron
 	} else if (typeof module === 'object' && typeof module.exports === 'object') {
 		// Node/CommonJS
 		L = require('leaflet');
 		module.exports = factory(L);
+*/
 	} else {
 		// Browser globals
 		if (typeof window.L === 'undefined') {
