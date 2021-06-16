@@ -75,7 +75,8 @@ script:
 
 deploy:
   provider: releases
-  api-key: ${GITHUB_API_KEY}
+  api_key: ${GITHUB_API_KEY}
   file: rdzSonde-${TRAVIS_TAG}.apk
+  skip_cleanup: true
   on:
     tags: true
