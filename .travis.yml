@@ -100,7 +100,7 @@ script:
       echo "Windows";
       cordova build electron --release;
       find platforms
-      mv platforms\electron\build\*.exe rdzSonde-setup-${TRAVIS_TAG}.exe;
+      mv platforms/electron/build/*.exe rdzSonde-setup-${TRAVIS_TAG}.exe;
       ls *.exe;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
