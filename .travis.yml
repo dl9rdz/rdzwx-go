@@ -8,6 +8,13 @@ matrix:
         - ELECTRON_CACHE=$HOME/.cache/electron
         - ELECTRON_BUILD_BACHE=$HOME/.cache/electron-builder
 
+    - os: windows
+      language: node_js
+      node_js: "12"
+      env:
+        - ELECTRON_CACHE=$HOME/.cache/electron
+        - ELECTRON_BUILD_BACHE=$HOME/.cache/electron-builder
+
 #    - os: linux
 #      language: minimal
 #      dist: focal
@@ -31,6 +38,10 @@ before_script:
  # - android-wait-for-emulator
  # - adb shell input keyevent 82 &
  # - curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+  - if [ "$TRAVIS_OS_NAME" == "windows" ]; then
+      npm install -g cordova;
+      cordova platform add electron;
+    fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       sudo npm install -g cordova;
       cordova platform add electron;
@@ -60,8 +71,13 @@ before_script:
     fi
 
 script:
+  - if [ "$TRAVIS_OS_NAME" == "windows" ]; then
+      echo "Windows";
+      cordova build electron --release
+    fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       echo "OSX";
+      cordova build electron --release
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
     cordova build --release;
