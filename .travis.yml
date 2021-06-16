@@ -78,5 +78,6 @@ deploy:
   api_key: ${GITHUB_API_KEY}
   file: rdzSonde-${TRAVIS_TAG}.apk
   skip_cleanup: true
+  overwrite: true
   on:
     tags: true
