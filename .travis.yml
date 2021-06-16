@@ -7,6 +7,14 @@ matrix:
       env:
         - ELECTRON_CACHE=$HOME/.cache/electron
         - ELECTRON_BUILD_BACHE=$HOME/.cache/electron-builder
+#      deploy:
+#        provider: releases
+#        api_key: ${GITHUB_API_KEY}
+#        file: rdzSonde-setup-${TRAVIS_TAG}.exe
+#        skip_cleanup: true
+#        overwrite: true
+#        on:
+#          tags: true
 
     - os: windows
       language: node_js
@@ -14,11 +22,28 @@ matrix:
       env:
         - ELECTRON_CACHE=$HOME/.cache/electron
         - ELECTRON_BUILD_BACHE=$HOME/.cache/electron-builder
+      deploy:
+        provider: releases
+        api_key: ${GITHUB_API_KEY}
+        file: rdzSonde-setup-${TRAVIS_TAG}.exe
+        skip_cleanup: true
+        overwrite: true
+        on:
+          tags: true
 
 #    - os: linux
 #      language: minimal
 #      dist: focal
 #      group: edge
+#       deploy:
+#         provider: releases
+#         api_key: ${GITHUB_API_KEY}
+#         file: rdzSonde-${TRAVIS_TAG}.apk
+#         skip_cleanup: true
+#         overwrite: true
+#         on:
+#           tags: true
+#
 
 env:
   global:
@@ -74,7 +99,7 @@ script:
   - if [ "$TRAVIS_OS_NAME" == "windows" ]; then
       echo "Windows";
       cordova build electron --release;
-      mv "platforms\electron\build\rdzSonde Setup *.exe" rdzSonde-setup-${TRAVIS_TAG}.exe;
+      mv platforms\electron\build\*.exe rdzSonde-setup-${TRAVIS_TAG}.exe;
       ls *.exe;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
@@ -90,12 +115,3 @@ script:
     fi
 
 
-deploy:
-  provider: releases
-  api_key: ${GITHUB_API_KEY}
-  # file: rdzSonde-${TRAVIS_TAG}.apk
-  file: rdzSonde-setup-${TRAVIS_TAG}.exe
-  skip_cleanup: true
-  overwrite: true
-  on:
-    tags: true
