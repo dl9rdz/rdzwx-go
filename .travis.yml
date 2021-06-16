@@ -8,10 +8,10 @@ matrix:
         - ELECTRON_CACHE=$HOME/.cache/electron
         - ELECTRON_BUILD_BACHE=$HOME/.cache/electron-builder
 
-    - os: linux
-      language: minimal
-      dist: focal
-      group: edge
+#    - os: linux
+#      language: minimal
+#      dist: focal
+#      group: edge
 
 env:
   global:
@@ -33,7 +33,7 @@ before_script:
  # - curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       sudo npm install -g cordova;
-      cordova platfrom add electron;
+      cordova platform add electron;
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
     echo ${TEST};
@@ -61,6 +61,7 @@ before_script:
 
 script:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      echo "OSX";
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
     cordova build --release;
