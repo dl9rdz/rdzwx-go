@@ -67,7 +67,7 @@ script:
   - export BUILD_TOOLS=$HOME/sdk/build-tools/29.0.3
   - ${BUILD_TOOLS}/zipalign -v -p 4 platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk rdzSonde-unsigned.apk
   - echo ${SUPERSECRET} | gpg --batch --yes --passphrase-fd 0 -d my-release-key.jks.gpg > my-release-key.jks
-  - ${BUILD_TOOLS}/apksigner sign --ks my-release-key.jks --out rdzSonde-${TRAVIS_TAG}.apk rdzSonde-unsigned.apk
+  - echo ${JKSPASS} | ${BUILD_TOOLS}/apksigner sign --ks my-release-key.jks --out rdzSonde-${TRAVIS_TAG}.apk rdzSonde-unsigned.apk
   # ./gradlew clean build
   #- ./gradlew test
   #- ./gradlew build check
