@@ -65,7 +65,7 @@
           <div id='map'></div>
         </div>
 	<script>
-	  if(!global) { global = globalThis; }
+	  if(typeof(global)=='undefined') { global = globalThis; }
         </script>
         <script src="js/index.js"></script>
     </body>
