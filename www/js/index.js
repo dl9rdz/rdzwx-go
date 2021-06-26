@@ -551,10 +551,12 @@ function getPrediction(refobj) {
     var desc = document.getElementById("tawhiri-descent").value;
     if(desc) desc=parseFloat(desc); else desc=5.0;
     var usecurrent = document.getElementById("tawhiri-current").checked;
+    var lon = refobj.obj.lon;
+    if(lon<0) lon+=360;  // tawhiri api needs 0..360
 
     var tParams = {
         "launch_latitude": refobj.obj.lat,
-        "launch_longitude": refobj.obj.lon,
+        "launch_longitude": lon,
         "launch_altitude": refobj.obj.alt.toFixed(1),
         "launch_datetime": new Date().toISOString().split('.')[0] + 'Z',
         "ascent_rate": asc,
@@ -586,8 +588,8 @@ function getPrediction(refobj) {
             var traj0 = pred.prediction[0].trajectory;  // 0 is ascent, 1 is descent...
             var traj1 = pred.prediction[1].trajectory;  // 0 is ascent, 1 is descent...
 	    var latlons = [];
-	    traj0.forEach( p => latlons.push( [p.latitude, p.longitude] ) );
-	    traj1.forEach( p => latlons.push( [p.latitude, p.longitude] ) );
+	    traj0.forEach( p => latlons.push( [p.latitude, wrap(p.longitude)] ) );
+	    traj1.forEach( p => latlons.push( [p.latitude, wrap(p.longitude)] ) );
 	    //alert("path: "+JSON.stringify(traj));
       	    poly = L.polyline(latlons, { opacity: 0.7, color: '#EE0000', dashArray: '8, 6'} );
             poly.addTo(map);
@@ -830,6 +832,10 @@ function createButton(label, container) {
   btn.setAttribute("type", "button");
   btn.innerHTML = label;
   return btn;
+}
+function wrap(lng) {
+  if(lng>180) { return lng-360; }
+  return lng;
 }
 
 // radiosondy.info
