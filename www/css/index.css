@@ -127,6 +127,8 @@ html, body {
   font-size: 11pt;
 }
 .tawhiricontent input {
+  color: #ffffff;
+  background-color: #000000;
   font-size: 11pt;
   width: 5em;
 }
