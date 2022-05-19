@@ -38,6 +38,10 @@ var infobox = null;
 var checkMark = "&#x2714;";
 var crossMark = "&#x274C;";
 
+var offlineMap = localStorage.getItem("mapstorage");
+if(!offlineMap) offlineMap="file:///sdcard/Android/data/de.dl9rdz.files/";
+console.log("Map storage location: "+offlineMap);
+
 // add "top center" and "bottom center" to leaflet
 (function (L) {
    L.Map.prototype._initControlPos = function(_initControlPos) {
@@ -100,8 +104,76 @@ function onDeviceReady() {
     tfcycle = L.tileLayer('https://{s}.tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=' + tfapikey, {attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'}),
     tfatlas = L.tileLayer('https://{s}.tile.thunderforest.com/mobile-atlas/{z}/{x}/{y}.png?apikey=' + tfapikey, {attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'}),
     opentopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {attribution: 'Kartendaten: &copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende, <a href="http://viewfinderpanoramas.org">SRTM</a> | Kartendarstellung: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'}),
-    sat  = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'}),
-    offline = L.tileLayer('file:///android_asset/www/tiles/{z}/{x}/{y}.png', {attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxNativeZoom: 14} );
+    sat  = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'})
+
+    L.OfflineTileLayer  = L.TileLayer.extend({
+        getTileUrl: function(tilePoint, tile, done) {
+	    var tilesrc;
+            var z = tilePoint.z, x = tilePoint.x, y = tilePoint.y;
+            console.log("Coord: "+x+","+y+","+z);
+	    console.log("this: " + this);
+	    tile.thethis = this;
+            RdzWx.gettile(x, y, z, function(result) {
+                if(result.tile) {
+                    console.log("gettile: success: " + result.tile);
+		    tile.onload = L.Util.bind(tile.thethis._tileOnLoad, this, done, tile);
+		    tile.src = result.tile;
+		    //done(tile);
+                } else {
+                    console.log("gettile: success but no tile");
+                    tile.src =  "img/MapTileUnavailable.png";
+		    done(tile);
+                }
+            }, function(error) {
+                console.log("gettile: error: " + error);
+                tile.src = "img/MapTileUnavailable.png";
+		done(tile);
+            });
+	    console.log("getTileUrl returning...");
+            //return tilestr;
+        },
+	createTile: function (coords, done) {
+	    var tile = document.createElement('img');
+
+	    //DomEvent.on(tile, 'load', Util.bind(this._tileOnLoad, this, done, tile));
+	    //DomEvent.on(tile, 'error', Util.bind(this._tileOnError, this, done, tile));
+
+	    if (this.options.crossOrigin || this.options.crossOrigin === '') {
+		    tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
+	    }
+
+	    /*
+	     Alt tag is set to empty string to keep screen readers from reading URL and for compliance reasons
+	     http://www.w3.org/TR/WCAG20-TECHS/H67
+	    */
+	    tile.alt = '';
+
+	    /*
+	     Set role="presentation" to force screen readers to ignore this
+	     https://www.w3.org/TR/wai-aria/roles#textalternativecomputation
+	    */
+	    tile.setAttribute('role', 'presentation');
+
+	    //tile.src = this.getTileUrl(coords);
+            this.getTileUrl(coords, tile, done);
+
+	    return tile;
+        }
+/*
+        _loadTile: function(tile, tilePoint) {
+            tile._layer = this;
+            tile.onload = this._tileOnLoad;
+            tile.onerror = this._tileOnError;
+            this._adjustTilePoint(tilePoint);
+            this.getTileURL(tilePoint, tile);
+            this.fire("tileloadstart", { tile: tile, url: tile.src } );
+        },
+*/
+    });
+    L.offlineTileLayer = function(url, options) {
+        return new L.OfflineTileLayer(url, options);
+    };
+    var offline = L.offlineTileLayer("http://NOWHERE", {attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom: 22});
     Stamen_TonerHybrid = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-hybrid/{z}/{x}/{y}{r}.{ext}', {
 	    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 	    subdomains: 'abcd',
@@ -117,6 +189,7 @@ function onDeviceReady() {
 
     map = L.map('map', { layers: [osm], contextmenu: true, zoomControl: false} ).setView([48,13],12);
     var baseMaps = {
+	'Offline': offline,
 	"Openstreetmap": osm,
 	"Landscape": tfland,
 	"Transport": tftrans,
@@ -126,7 +199,6 @@ function onDeviceReady() {
 	"OpenTopoMap" : opentopo,
 	"Sat": sat,
 	"Sat/Hybrid": hybrid
-	<!-- 'Offline': offline -->
     };
 
     var baseMapControl = new L.control.layers(baseMaps, {}, { collapsed: true, position: 'topright' } ).addTo(map);
@@ -675,8 +747,6 @@ function updateMypos(obj) {
     }
   }
 }
-
-var lastMsgTS = 0;
 
 function periodicStatusCheck() {
     now = new Date();
