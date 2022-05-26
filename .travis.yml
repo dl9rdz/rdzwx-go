@@ -3,7 +3,7 @@ matrix:
     - os: osx
       osx_image: xcode11.3
       language: node_js
-      node_js: "12"
+      node_js: "14"
       env:
         - ELECTRON_CACHE=$HOME/.cache/electron
         - ELECTRON_BUILD_BACHE=$HOME/.cache/electron-builder
@@ -16,20 +16,20 @@ matrix:
         on:
           tags: true
 
-    - os: windows
-      language: node_js
-      node_js: "12"
-      env:
-        - ELECTRON_CACHE=$HOME/.cache/electron
-        - ELECTRON_BUILD_BACHE=$HOME/.cache/electron-builder
-      deploy:
-        provider: releases
-        api_key: ${GITHUB_API_KEY}
-        file: rdzSonde-setup-${TRAVIS_TAG}.exe
-        skip_cleanup: true
-        overwrite: true
-        on:
-          tags: true
+#    - os: windows
+#      language: node_js
+#      node_js: "12"
+#      env:
+#        - ELECTRON_CACHE=$HOME/.cache/electron
+#        - ELECTRON_BUILD_BACHE=$HOME/.cache/electron-builder
+#      deploy:
+#        provider: releases
+#        api_key: ${GITHUB_API_KEY}
+#        file: rdzSonde-setup-${TRAVIS_TAG}.exe
+#        skip_cleanup: true
+#        overwrite: true
+#        on:
+#          tags: true
 
 #    - os: linux
 #      language: minimal

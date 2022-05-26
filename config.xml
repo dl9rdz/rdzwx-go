@@ -43,4 +43,6 @@
 
     <preference name="SplashScreen" value="none" />
 
+    <preference name="AndroidInsecureFileModeEnabled" value="true" />
+
 </widget>

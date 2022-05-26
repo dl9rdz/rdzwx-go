@@ -48,18 +48,20 @@
 	<script src="js/easy-button.js"></script>
 	<script src="js/L.Control.MousePosition.js"></script>
 
-        <title>rdzSonde v1.0.6</title>
+        <title>rdzSonde v1.0.6 +experimental</title>
     </head>
     <body>
         <div id="all">
 	  <div id="toolbar">
 	  <a id="toolbarclose" class="leaflet-popup-close-button" style="cursor: pointer; float: right;">X</a>
-	  <h2>rdzSonde v1.0.6</h2>
+	  <h2>rdzSonde v1.0.6 +experimental</h2>
           <p>Copyright &copy; 2021 Hansi Reiser, dl9rdz</p>
           <p>see <a href="https://github.com/dl9rdz/rdzwx-go">https://github.com/dl9rdz/rdzwx-go</a> for details</p>
 	  <p>Apache License Version 2.0</p>
 	  <hr>
-	  <button onclick="RdzWx.selstorage(&quot;&quot;, function(res) { localStorage.setItem(&quot;mapstorage&quot;, res); })">Select storage dir</button>
+	  <button onclick="RdzWx.selstorage(&quot;map&quot;, function(res) { localStorage.setItem(&quot;mapstorage&quot;, res); })">Select map file </button>
+	  <hr>
+	  <button onclick="RdzWx.selstorage(&quot;theme&quot;, function(res) { localStorage.setItem(&quot;mapstorage&quot;, res); })">Select map theme </button>
 	  <hr>
 	  <div id="toolbaritems">
           </div>
