@@ -3,7 +3,7 @@ matrix:
     - os: osx
       osx_image: xcode11.3
       language: node_js
-      node_js: "14"
+      node_js: "18"
       env:
         - ELECTRON_CACHE=$HOME/.cache/electron
         - ELECTRON_BUILD_BACHE=$HOME/.cache/electron-builder
