@@ -28,6 +28,7 @@ mkrelease:
 .ONESHELL:
 sign:
 	cd platforms/android/app/build/outputs/apk/release/ && \
+	rm -f app-release-unsigned-aligned.apk && \
 	/Users/hansr/Library/Android//sdk/build-tools/30.0.3/zipalign -v -p 4 app-release-unsigned.apk app-release-unsigned-aligned.apk &&  \
 	/Users/hansr/Library/Android//sdk/build-tools/30.0.3/apksigner sign --ks ~/src/rdzwx-go/my-release-key.jks --out app-release.apk app-release-unsigned-aligned.apk
 

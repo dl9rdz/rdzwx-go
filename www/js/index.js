@@ -85,7 +85,7 @@ function onDeviceReady() {
     .then(response => response.json())
     .then(data => {
       console.log('Success:', data);
-          if(data.version > "1.0.6") {
+          if(data.version > "1.0.7") {
              if(window.confirm("New version "+ data.version + " available! Download?")) {
 		console.log("opening "+data.url);
 		cordova.InAppBrowser.open(data.url, "_system");
