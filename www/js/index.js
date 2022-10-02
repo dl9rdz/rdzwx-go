@@ -608,7 +608,8 @@ function removePrediction(marker) {
 }
 
 function getPrediction(refobj) {
-    TAWHIRI = 'http://predict.cusf.co.uk/api/v1';
+    // going out of service soon... TAWHIRI = 'http://predict.cusf.co.uk/api/v1';
+    TAWHIRI = 'https://api.v2.sondehub.org/tawhiri';
     if(refobj == null) { refobj = lastMarker; }
     if(refobj == null) {
         alert("no object available");
@@ -715,6 +716,8 @@ function callBack(arg) {
 	return;
     }
     update(obj);
+    // for now, only for electron (does not support keepCallback)
+    //RdzWx.next(callBack);
 }
 
 function updateMypos(obj) {
