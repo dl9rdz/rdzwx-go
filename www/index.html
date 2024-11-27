@@ -30,6 +30,7 @@
                 * Enable inline JS: add 'unsafe-inline' to default-src
         -->
         <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;"> -->
+
         <meta name="format-detection" content="telephone=no">
         <meta name="msapplication-tap-highlight" content="no">
         <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover, user-scalable=no">
@@ -41,21 +42,17 @@
 	<script src="js/leaflet.js"></script>
 	<script src="js/leaflet.contextmenu.js"></script>
 	<link rel="stylesheet" href="css/easy-button.css">
-<!--
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.css">
-<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
--->
 	<script src="js/easy-button.js"></script>
 	<script src="js/L.Control.MousePosition.js"></script>
 
-        <title>rdzSonde v1.0.7 +experimental</title>
+        <title>rdzSonde v1.1.0</title>
     </head>
     <body>
         <div id="all">
 	  <div id="toolbar">
 	  <a id="toolbarclose" class="leaflet-popup-close-button" style="cursor: pointer; float: right;">X</a>
-	  <h2>rdzSonde v1.0.7 +experimental</h2>
-          <p>Copyright &copy; 2022 Hansi Reiser, dl9rdz</p>
+	  <h2>rdzSonde v1.1.0</h2>
+          <p>Copyright &copy; 2022-2024 Hansi Reiser, dl9rdz</p>
           <p>see <a href="https://github.com/dl9rdz/rdzwx-go">https://github.com/dl9rdz/rdzwx-go</a> for details</p>
 	  <p>Apache License Version 2.0</p>
 	  <hr>
@@ -63,6 +60,11 @@
 	  <hr>
 	  <button onclick="RdzWx.selstorage(&quot;theme&quot;, function(res) { localStorage.setItem(&quot;mapstorage&quot;, res); })">Select map theme </button>
 	  <hr>
+          <div label="connection-options">
+          <label><input type="radio" name="connection" id="auto-discovery" value="auto"> Automatic (mDNS discovery) </label><br>
+          <label><input type="radio" name="connection" id="manual-entry" value="manual"> Manual IP/host entry </label><br>
+          <input type="text" id="manual-address" placeholder="Enter IP/Hostname" style="display:none; width: 100%;">
+          </div>
 	  <div id="toolbaritems">
           </div>
 	  </div>

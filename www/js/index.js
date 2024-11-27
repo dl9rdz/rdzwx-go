@@ -324,14 +324,17 @@ function onDeviceReady() {
 	else { this._hideContent(); }
       },
       setContent: function(obj) {
-        //alert(JSON.stringify(obj));
 	if(!this._infoContentContainer) return;
+        if( (obj.validPos&7) != 7 ) { return; }  // check if we have lat, lon, alt in data; if not no update of display
+
  	if(obj.type == null) obj.type = "RS41";  // TODO fix in plugin
 	distance = "";
-        distance = L.latLng(obj).distanceTo(L.latLng(mypos))
-        if(distance>9999) { distance = "d=" + (0.001*distance).toFixed(1) + "km"; }
-	else if (distance>99) { distance = "d=" + distance.toFixed(0) + "m"; }
-	else { distance = "d=" + distance.toFixed(1) + "m"; }
+        try {
+          distance = L.latLng(obj).distanceTo(L.latLng(mypos))
+          if(distance>9999) { distance = "d=" + (0.001*distance).toFixed(1) + "km"; }
+	  else if (distance>99) { distance = "d=" + distance.toFixed(0) + "m"; }
+	  else { distance = "d=" + distance.toFixed(1) + "m"; }
+        } catch(error) {}
 	sym = "<span class=\"lifenessinfo\">&#x2B24; </span>";
 	l1 = "<table class=\"infotable\"><tr><td class=\"infotd\">" + sym + obj.type + "</td><td class=\"infotdr\">" + obj.ser + "</td></tr></table>";
 	// normal layout
@@ -416,6 +419,7 @@ function onDeviceReady() {
 	  }
 	  if(obj.hdop<0) { // GPS fix lost
 	  } else {
+	    console.log("updateMybos..updateMybos....")
 	    var p0 = L.latLng(obj);
 	    var p1 = L.latLng(this._currentObj);
 	    var b = p0.bearingTo(p1);
@@ -499,6 +503,8 @@ function onDeviceReady() {
     });
     ready = 1;
     RdzWx.start("testarg", callBack);
+    console.log("Starting setupTTGO");
+    setupTTGOconfig();
     setInterval(periodicStatusCheck, 1000);
 
     // just for testing
@@ -781,8 +787,8 @@ function update(obj) {
 	return;
     }
 
-    // position update
-    //console.log("Pos update: "+JSON.stringify(obj));
+    // sonde data update
+    //console.log("Sonde update: "+JSON.stringify(obj));
     if(obj.egmdiff && obj.alt) { obj.alt -= obj.egmdiff; }
     infobox.setContent(obj);
     infobox.setStatus(obj.res);
@@ -802,7 +808,7 @@ function update(obj) {
           markers[obj.id] = marker;
 	  lastMarker = marker
 	} else {
-	  console.log("pos update: No valid update: "+JSON.stringify(obj));
+	  //console.log("pos update: No valid update: "+JSON.stringify(obj));
 	}
         return;
     }
@@ -923,3 +929,70 @@ function reqauth() {
   }
   xhr.send('submitted=1&username=DL9RDZ&password=ct1jzmhr&Submit=Login');
 }
+
+
+// Handling settings for TTGO address
+// Must be called after RdzWx has been initialized, as it calls updateDiscovery(...)
+function setupTTGOconfig() {
+    // Restore state on application start
+    const savedState = localStorage.getItem('connectionState') || 'auto';
+    const savedAddr = localStorage.getItem('manualAddress') || 'rdzsonde.local';
+    console.log("updating to "+savedState+", "+savedAddr);
+    updateTTGOaddr(savedState, savedAddr)
+
+    if (savedState === 'auto') {
+        document.getElementById('auto-discovery').checked = true;
+        document.getElementById('manual-address').style.display = 'none';
+    } else if (savedState === 'manual') {
+        document.getElementById('manual-entry').checked = true;
+        document.getElementById('manual-address').style.display = 'block';
+    }
+
+    if (savedAddr) {
+        document.getElementById('manual-address').value = savedAddr;
+    }
+
+    // Save state and call updateTTGOaddr on changes
+    const radioButtons = document.querySelectorAll('input[name="connection"]');
+    const manualAddressInput = document.getElementById('manual-address');
+
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', () => {
+            const state = document.getElementById('auto-discovery').checked ? 'auto' : 'manual'
+            const addr = manualAddressInput.value;
+            localStorage.setItem('connectionState', state );
+            if (state === 'manual') {
+                manualAddressInput.style.display = 'block';
+            } else {
+                manualAddressInput.style.display = 'none';
+            }
+            updateTTGOaddr(state, addr);
+        });
+    });
+
+    manualAddressInput.addEventListener('blur', () => {
+        if (document.getElementById('manual-entry').checked) {
+            const addr = manualAddressInput.value;
+            localStorage.setItem('manualAddress', addr);
+            updateTTGOaddr('manual', addr);
+        }
+    });
+
+    manualAddressInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            manualAddressInput.blur(); // Trigger the blur event
+        }
+    });
+};
+
+// Placeholder for your custom function
+function updateTTGOaddr(state, addr) {
+    console.log('State:', state, 'Address:', addr);
+    RdzWx.mdnsUpdateDiscovery( state, addr, function(){})
+    // Implement your custom logic here
+}
+
+
+
+
+
