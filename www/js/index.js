@@ -507,8 +507,6 @@ function onDeviceReady() {
     setupTTGOconfig();
     setInterval(periodicStatusCheck, 1000);
 
-    // just for testing
-    update( {res: 0, validId: 1, validPos: 127, id: "A1234567", lat: 48.8621, lon: 12.064, alt: 20744, vs: 4.8, hs: 11.0, rssi: -90, rxStat: "||||||||||||....", type: "RS41", freq: "400.000", afc: "+1.2", ser: "A1234567"} );
     var g = localStorage.getItem('lastgps');
     if(g) { mypos = JSON.parse( g ); }
     mypos.hdop = -1;
