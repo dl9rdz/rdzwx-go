@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "rdzwx cordova plugin",
   "cordova": {
-    "id": "de-dl9rdz-rdzwx",
+    "id": "rdzwx-plugin",
     "platforms": [
       "android"
     ]

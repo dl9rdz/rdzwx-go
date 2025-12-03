@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="de-dl9rdz-rdzwx" version="0.0.6">
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="rdzwx-plugin" version="0.0.6">
     <name>RdzWx</name>
     <description>rdzwx cordova plugin</description>
     <license>Apache 2.0</license>
