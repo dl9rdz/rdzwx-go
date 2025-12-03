@@ -7,18 +7,18 @@ el:	plugin
 
 run:
 	clear
-	cp ../rdzwx-plugin/src/android/*.kt ./platforms/android/app/src/main/kotlin/de/dl9rdz/
+	# cp ../rdzwx-plugin/src/android/*.kt ./platforms/android/app/src/main/kotlin/de/dl9rdz/
 	cordova run android --device
 
 full:
 	clear
-	cordova plugin rm de-dl9rdz-rdzwx
-	cordova plugin add ../rdzwx-plugin/
+	# cordova plugin rm rdzwx-plugin
+	# cordova plugin add ../rdzwx-plugin/
 	cordova run android --device
 
 plugin:
-	cordova plugin rm de-dl9rdz-rdzwx
-	cordova plugin add ../rdzwx-plugin/
+	cordova plugin rm rdzwx-plugin
+	cordova plugin add plugin-src/rdzwx-plugin/
 
 release: apkrelease sign
 

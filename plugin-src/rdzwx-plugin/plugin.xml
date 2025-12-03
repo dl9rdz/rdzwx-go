@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="de-dl9rdz-rdzwx" version="0.0.6">
+    <name>RdzWx</name>
+    <description>rdzwx cordova plugin</description>
+    <license>Apache 2.0</license>
+    <keywords>cordova,rdzwx</keywords>
+    <js-module name="RdzWx" src="www/rdzwx.js">
+        <clobbers target="RdzWx" />
+    </js-module>
+
+    <hook type="before_plugin_install" src="scripts/fetch-egm96.js" />
+    <hook type="after_prepare" src="scripts/add-build-extras.js" />
+
+    <platform name="electron">
+        <config-file target="config.xml" parent="/*">
+            <feature name="RdzWx">
+                <param name="electron-package" value="RdzWx"/>
+            </feature>
+        </config-file>
+        <source-file src="src/android/assets/WW15MGH.DAC" target-dir="app/src/main/assets" />
+	<framework src="src/electron"/>
+<!--
+        <js-module src="src/electron/RdzWxProxy.js" name="RdzWx.Proxy">
+            <runs />
+        </js-module>
+-->
+    </platform>
+    <platform name="android">
+        <config-file target="config.xml" parent="/*">
+            <feature name="RdzWx">
+                <param name="android-package" value="de.dl9rdz.RdzWx" />
+            </feature>
+        </config-file>
+        <config-file parent="/manifest" target="AndroidManifest.xml">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+	    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+        </config-file>
+        <source-file src="src/android/rdzwx.kt" target-dir="app/src/main/kotlin/de/dl9rdz" />
+        <source-file src="src/android/rdzwx-a.kt" target-dir="app/src/main/kotlin/de/dl9rdz" />
+        <source-file src="src/android/Result.aidl"
+            target-dir="app/src/main/aidl/de/dl9rdz/rdzwx_predict" />
+        <source-file src="src/android/assets/WW15MGH.DAC" target-dir="app/src/main/assets" />
+	<lib-file src="src/android/libs/mapsforge-core-master-0.16.0.jar" />
+	<lib-file src="src/android/libs/mapsforge-map-master-0.16.0.jar" />
+	<lib-file src="src/android/libs/mapsforge-themes-master-0.16.0.jar" />
+	<lib-file src="src/android/libs/mapsforge-map-reader-master-0.16.0.jar" />
+	<lib-file src="src/android/libs/mapsforge-map-android-master-0.16.0.jar" />
+	<lib-file src="src/android/libs/androidsvg-1.4.jar" />
+    </platform>
+</plugin>
+
+

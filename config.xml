@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="de.dl9rdz" version="1.0.7" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0"
+<widget id="de.dl9rdz" version="1.1.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0"
     xmlns:android="schemas.android.com/apk/res/android">
     <name>rdzSonde</name>
     <description>
@@ -24,7 +24,6 @@
 
     <platform name="android">
         <allow-intent href="market:*" />
-	<splash src="res/icon.png"/>
         <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application">
           <application android:usesCleartextTraffic="true" />
         </edit-config>
@@ -39,9 +38,7 @@
     <preference name="GradlePluginKotlinVersion" value="1.7.21" />
 
     <preference name="android-minSdkVersion" value="23" />
-    <preference name="android-targetSdkVersion" value="33" />
-
-    <preference name="SplashScreen" value="none" />
+    <preference name="android-targetSdkVersion" value="35" />
 
     <preference name="AndroidInsecureFileModeEnabled" value="true" />
 

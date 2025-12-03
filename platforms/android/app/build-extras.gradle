@@ -1,7 +1,0 @@
-// Add this to enable AIDL in your Cordova Android project
-android {
-    buildFeatures {
-        aidl = true
-    }
-}
-

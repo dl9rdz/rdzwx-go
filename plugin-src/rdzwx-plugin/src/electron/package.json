@@ -1,0 +1,8 @@
+{
+  "name": "rdzwx-plugin",
+  "version": "0.0.0",
+  "main": "RdzWx.js",
+  "cordova": {
+    "serviceName": "RdzWx"
+  }
+}

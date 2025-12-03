@@ -1,0 +1,23 @@
+{
+  "name": "rdzwx-plugin",
+  "version": "0.0.1",
+  "description": "rdzwx cordova plugin",
+  "cordova": {
+    "id": "de-dl9rdz-rdzwx",
+    "platforms": [
+      "android"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dl9rdz/rdzwx-plugin.git"
+  },
+  "keywords": [
+    "cordova",
+    "rdzwx",
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "author": "dl9rdz",
+  "license": "Apache 2.0"
+}
