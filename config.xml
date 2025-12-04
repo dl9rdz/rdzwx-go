@@ -27,6 +27,7 @@
         <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application">
           <application android:usesCleartextTraffic="true" />
         </edit-config>
+        <resource-file src="res/build-extras.gradle" target="app/build-extras.gradle"/>
     </platform>
     <icon src="res/icon512.png"/>
     <platform name="electron">

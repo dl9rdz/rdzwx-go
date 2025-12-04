@@ -9,7 +9,6 @@
     </js-module>
 
     <hook type="before_plugin_install" src="scripts/fetch-egm96.js" />
-    <hook type="after_prepare" src="scripts/add-build-extras.js" />
 
     <platform name="electron">
         <config-file target="config.xml" parent="/*">
