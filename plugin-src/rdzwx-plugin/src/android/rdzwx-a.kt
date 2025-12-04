@@ -15,6 +15,7 @@ import android.Manifest
 
 import android.content.Context
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 
 import org.apache.cordova.CordovaArgs
@@ -262,7 +263,12 @@ class NmeaListener : OnNmeaMessageListener {
 
     fun initialize(cordovaPlugin: RdzWx?, locationManager: LocationManager?) {
         rdzwx = cordovaPlugin
-        locationManager?.addNmeaListener(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            locationManager?.addNmeaListener(this, Handler(Looper.getMainLooper()))
+        } else {
+            @Suppress("DEPRECATION")
+            locationManager?.addNmeaListener(this)
+        }
     }
 
     fun stop(locationManager: LocationManager?) {
@@ -301,7 +307,7 @@ class MDNSHandler {
         if(mode == "auto") {
             start();
         } else {
-	    stop(); 
+            stop();
             if(!addr.isNullOrEmpty()) {
                 try {
                     val (host, port) = addr.split(":").let {
@@ -336,13 +342,20 @@ class MDNSHandler {
         }
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo?) {
-            Log.d(LOG_TAG, "Resolve suceeded with host ${serviceInfo?.getHost()} and port ${serviceInfo?.port}")
-            if (serviceInfo != null) {
-                rdzwx?.runJsonRdz(serviceInfo.host, serviceInfo.port)
-            } else Log.d(LOG_TAG, "service info is null")
-            if (rdzwx == null) {
-                Log.d(LOG_TAG, "test is null")
+            if (serviceInfo == null) {
+                Log.d(LOG_TAG, "Resolve succeeded but serviceInfo is null")
+                return
             }
+            // Inline, no helper function:
+            val host =
+                if (Build.VERSION.SDK_INT >= 34) {
+                    serviceInfo.hostAddresses.firstOrNull()
+                } else {
+                    @Suppress("DEPRECATION")
+                    serviceInfo.host
+                }
+            Log.d(LOG_TAG, "Resolve suceeded with host $host and port ${serviceInfo.port}")
+	    if(host != null) { rdzwx?.runJsonRdz(host, serviceInfo.port) }
         }
     }
 

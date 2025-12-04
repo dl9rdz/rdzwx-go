@@ -7,6 +7,7 @@
 package de.dl9rdz
 
 import android.os.Handler
+import android.os.Looper
 import android.content.Intent
 import android.net.Uri
 import android.content.Context
@@ -39,8 +40,6 @@ import java.io.FileInputStream
 import org.json.JSONObject
 import java.io.BufferedInputStream
 import java.util.zip.ZipInputStream;
-
-
 
 import org.mapsforge.core.graphics.TileBitmap
 import org.mapsforge.core.model.LatLong
@@ -304,7 +303,7 @@ class OfflineTileCache: Thread {
 
 class RdzWx : CordovaPlugin() {
     var running: Boolean = false
-    val handler = Handler()
+    val handler = Handler(Looper.getMainLooper())
     val gpsHandler = GPSHandler()
     val mdnsHandler = MDNSHandler()
     val jsonrdzHandler = JsonRdzHandler()
@@ -314,23 +313,6 @@ class RdzWx : CordovaPlugin() {
     var offlineTileCache: OfflineTileCache? = null
     var offlineMap: Uri? = null
     var offlineTheme: Uri? = null
-
-    override fun initialize(cordova: CordovaInterface, webview: CordovaWebView) {
-	super.initialize(cordova, webview)
-        //val context = this.cordova.getActivity().getApplicationContext()
-
-	val sharedPref = this.cordova.getActivity().getPreferences(Context.MODE_PRIVATE) ?: return
-	var offlineMapFile = sharedPref.getString("offlineMap", "")
-	var offlineMapTheme = sharedPref.getString("offlineTheme", "")
-	offlineMap = Uri.parse(offlineMapFile)
-	offlineTheme = Uri.parse(offlineMapTheme)
-	try {
-            offlineTileCache = OfflineTileCache(this.cordova.getActivity(), this, offlineMap, offlineTheme!!)
-	} catch(e: Exception) {
-	    LOG.e(LOG_TAG, "Cannot create OfflineTileCache: "+e)
-	}
-	LOG.d(LOG_TAG, "Offline map: "+offlineMapFile+", offline theme: "+offlineMapTheme)
-    }
 
     val runnable: Runnable = run {
         Runnable {
@@ -343,9 +325,7 @@ class RdzWx : CordovaPlugin() {
     }
 
     fun runJsonRdz(host: InetAddress, port: Int) {
-// host, serviceInfo: NsdServiceInfo) {
         LOG.d(LOG_TAG, "setting target host for jsonrdz handler")
-        //jsonrdzHandler.connectTo(serviceInfo.host, serviceInfo.port)
         jsonrdzHandler.connectTo(host, port)
     }
 
@@ -393,7 +373,20 @@ class RdzWx : CordovaPlugin() {
     }
 
     override fun pluginInitialize() {
-        super.initialize(cordova, webView)
+        super.pluginInitialize()
+
+        //val context = this.cordova.getActivity().getApplicationContext()
+	val sharedPref = this.cordova.getActivity().getPreferences(Context.MODE_PRIVATE) ?: return
+	var offlineMapFile = sharedPref.getString("offlineMap", "")
+	var offlineMapTheme = sharedPref.getString("offlineTheme", "")
+	offlineMap = Uri.parse(offlineMapFile)
+	offlineTheme = Uri.parse(offlineMapTheme)
+	try {
+            offlineTileCache = OfflineTileCache(this.cordova.getActivity(), this, offlineMap, offlineTheme!!)
+	} catch(e: Exception) {
+	    LOG.e(LOG_TAG, "Cannot create OfflineTileCache: "+e)
+	}
+	LOG.d(LOG_TAG, "Offline map: "+offlineMapFile+", offline theme: "+offlineMapTheme)
     }
 
     fun mdnsUpdateDiscovery(mode: String, addr: String?) {
@@ -507,12 +500,7 @@ class RdzWx : CordovaPlugin() {
 			} else {
 			    val bitmap = offlineTileCache!!.get(x, y, z)
 			    LOG.d(LOG_TAG, "Getting offline tile done, bitmap is " + bitmap)
-			    // It is always not null... TODO remove stuff here
-			    //if ( bitmap != null ) {
 			    result.put("tile", bitmap)
-			    //} else {
-		            //    result.put("error", "error")
-			    //}
 			}
 		        callbackContext.success( result )
 		    }

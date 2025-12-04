@@ -18,7 +18,7 @@ full:
 
 plugin:
 	cordova plugin rm rdzwx-plugin
-	cordova plugin add plugin-src/rdzwx-plugin/
+	cordova plugin add plugin-src/rdzwx-plugin/ --link
 
 release: apkrelease sign
 
